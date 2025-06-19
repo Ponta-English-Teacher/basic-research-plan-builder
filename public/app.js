@@ -23,7 +23,7 @@ stepButtons.forEach(btn => {
     const step = btn.dataset.step;
     researchState.currentStep = step;
     resetChat();
-    showSystemMessage(getStepPrompt(step));
+    appendMessage("gpt", getUserFacingInstruction(step));
   });
 });
 
@@ -81,6 +81,18 @@ function resetChat() {
 function getStepPrompt(step) {
   switch (step) {
     case "1": return "You're helping a first-year university student create a simple, in-class research project. The student will survey classmates using a short questionnaire. First, ask what topic they’re interested in (e.g., money, time, jobs), then help them narrow it down to specific, simple, and measurable ideas.";
+    case "2": return "Let’s narrow down your topic into a clear research question.";
+    case "3": return "Let’s create 3–4 profile questions and 7–10 Likert scale questions for your survey.";
+    case "4": return "What do you expect your survey will show? Let's form a clear hypothesis.";
+    case "5": return "Let's make slide ideas for presenting your research plan before the survey.";
+    case "6": return "Here’s your current research plan. Do you want to export or revise anything?";
+    default: return "Let’s get started!";
+  }
+}
+// ===== Step Instructions for Student UI =====
+function getUserFacingInstruction(step) {
+  switch (step) {
+    case "1": return "What topic are you interested in? (e.g., money, time, jobs)";
     case "2": return "Let’s narrow down your topic into a clear research question.";
     case "3": return "Let’s create 3–4 profile questions and 7–10 Likert scale questions for your survey.";
     case "4": return "What do you expect your survey will show? Let's form a clear hypothesis.";
