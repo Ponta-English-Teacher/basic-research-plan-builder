@@ -1,0 +1,212 @@
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #121212;
+  color: #f0f0f0;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-size: 2em;
+  color: #ffffff;
+}
+
+header p {
+  font-size: 1em;
+  color: #ccc;
+}
+
+/* Layout */
+.container {
+  display: flex;
+  gap: 20px;
+}
+
+#sidebar {
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-btn {
+  padding: 10px;
+  font-size: 0.95em;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.step-btn:hover {
+  background-color: #555;
+}
+
+/* Main Area */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Chat */
+#chat-area {
+  background-color: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+#chat-log {
+  height: 180px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #222;
+  border-radius: 4px;
+}
+
+#user-input {
+  width: 100%;
+  height: 60px;
+  padding: 10px;
+  background-color: #2b2b2b;
+  color: white;
+  border: 1px solid #555;
+  margin-bottom: 10px;
+}
+
+#send-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#send-btn:hover {
+  background-color: #222;
+}
+
+#dictionary-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+#dictionary-controls button {
+  flex: 1;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+#dictionary-controls button:hover {
+  background-color: #666;
+}
+
+/* Output + Summary */
+#output-area {
+  background-color: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+#output-area h2,
+#summary-area h3 {
+  margin-bottom: 10px;
+}
+
+#output-content,
+#summary-text {
+  background-color: #2b2b2b;
+  padding: 10px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+
+/* Glossary Popup */
+.popup-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.popup-buttons button {
+  flex: 1;
+  margin: 0 5px;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: #333;
+  color: white;
+  cursor: pointer;
+}
+
+.popup-buttons button:hover {
+  background-color: #555;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.85em;
+  color: #888;
+}
+#dictionary-popup {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1a1a1a;
+  border: 1px solid #555;
+  padding: 15px;
+  border-radius: 8px;
+  width: 320px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+#dictionary-popup.hidden {
+  display: none;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #eee;
+  background-color: #333;
+  padding: 4px 8px;
+  cursor: move;
+  user-select: none;
+}
+
+

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Basic Research Plan Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>📘 Basic Research Plan Builder</h1>
+    <p>Your guided path from research idea to survey design.</p>
+  </header>
+
+  <div class="container">
+    <aside id="sidebar">
+      <button class="step-btn" data-step="1">1. Theme</button>
+      <button class="step-btn" data-step="2">2. Research Question</button>
+      <button class="step-btn" data-step="3">3. Questionnaire</button>
+      <button class="step-btn" data-step="4">4. Hypothesis</button>
+      <button class="step-btn" data-step="5">5. Slide Plan</button>
+      <button class="step-btn" data-step="6">6. Summary</button>
+    </aside>
+
+    <main>
+      <section id="chat-area">
+        <div id="chat-log"></div>
+        <textarea id="user-input" placeholder="Type your idea or response..."></textarea>
+
+        <div id="dictionary-controls">
+          <button id="btn-meaning">🔍 What does it mean?</button>
+          <button id="btn-say">💬 How do you say?</button>
+        </div>
+
+        <button id="send-btn">Send</button>
+      </section>
+
+      <section id="output-area">
+        <h2>📄 Output</h2>
+        <div id="output-content">Your result will appear here.</div>
+
+        <div id="summary-area">
+          <h3>📝 Research Plan Summary</h3>
+          <pre id="summary-text">Nothing yet.</pre>
+          <button id="export-btn">📥 Download Summary</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Glossary Popup -->
+  <div id="dictionary-popup" class="hidden">
+    <div class="popup-header">
+      <span>Glossary Entry</span>
+      <button id="close-popup">✖</button>
+    </div>
+    <div id="dictionary-result">Select a word and click a button above.</div>
+    <div class="popup-buttons">
+      <button id="play-tts">🔊 Play it</button>
+      <button id="add-glossary">📘 Add to Glossary</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Basic Research Plan Builder | Built for student research learning</p>
+    <p>Created by Hitoshi Eguchi @ Hokusei Gakuen University</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
