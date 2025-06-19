@@ -1,19 +1,29 @@
-async function chatWithGPT(step, userMessage) {
-  const messages = [];
+export default async function handler(req, res) {
+  try {
+    const { messages } = await req.json();
 
-  // Add a system prompt for this step
-  messages.push({ role: "system", content: getStepPrompt(step) });
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages,
+        temperature: 0.7
+      })
+    });
 
-  // Add user input
-  messages.push({ role: "user", content: userMessage });
+    const data = await response.json();
 
-  const response = await fetch("/api/openai", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages })
-  });
+    if (!data || !data.choices || !data.choices[0]) {
+      return res.status(500).json({ error: "Invalid response from OpenAI" });
+    }
 
-  const data = await response.json();
-  return data.reply;
+    return res.status(200).json({ reply: data.choices[0].message.content });
+  } catch (error) {
+    console.error("API error:", error);
+    return res.status(500).json({ error: "Server error. Please try again." });
+  }
 }
-
