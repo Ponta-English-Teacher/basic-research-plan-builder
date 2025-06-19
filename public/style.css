@@ -73,12 +73,15 @@ main {
 }
 
 #chat-log {
-  height: 180px;
+  max-height: 500px; /* optional: prevent it from overtaking screen */
   overflow-y: auto;
   margin-bottom: 10px;
   padding: 10px;
   background-color: #222;
   border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 #user-input {
