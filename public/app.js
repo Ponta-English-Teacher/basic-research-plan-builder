@@ -82,6 +82,7 @@ You are helping a university student conduct a small survey in English class.
 This is not academic research — it is a class exercise to practice making a simple questionnaire, analyzing results, and presenting findings.
 
 First, ask what topic they are interested in (e.g., money, time, family, phones, relationships).
+
 If their answer is vague, give 5–7 simple and measurable examples related to that topic.
 ✅ Do NOT say "we must narrow it down more."
 ✅ Accept broad interest as long as it can be asked in survey form.
@@ -92,6 +93,7 @@ If their answer is vague, give 5–7 simple and measurable examples related to t
     case "2": return `
 Now help the student create a simple research question based on their topic.
 Ask: "What do you want to know about that topic?"
+
 Give 2–3 example questions based on their topic that are short, clear, and suitable for a basic survey.
 ✅ Accept if the student wants to explore more than one aspect.
 ✅ Once the question is set, say:
@@ -172,13 +174,9 @@ function storeResult(step, content) {
     case "1": researchState.step1.theme = content; break;
     case "2": researchState.step2.question = content; break;
     case "3":
-      const parts = content.split("Profile Questions:");
-      if (parts.length === 2) {
-        const [_, profileAndLikert] = parts;
-        const [profilePart, likertPart] = profileAndLikert.split("Likert Questions:");
-        researchState.step3.profileQuestions = profilePart.trim().split("\n").filter(Boolean);
-        researchState.step3.likertQuestions = likertPart.trim().split("\n").filter(Boolean);
-      }
+      const lines = content.split("\n");
+      researchState.step3.profileQuestions = lines.slice(0, 4);
+      researchState.step3.likertQuestions = lines.slice(4);
       break;
     case "4": researchState.step4.hypothesis = content; break;
     case "5": researchState.step5.slidePlan = content.split("\n"); break;
@@ -190,3 +188,27 @@ function storeResult(step, content) {
 // ===== Update Summary View =====
 function updateSummary() {
   summaryText.textContent = `
+📌 Topic: ${researchState.step1.theme}
+❓ Research Question: ${researchState.step2.question}
+
+👤 Profile Questions: ${researchState.step3.profileQuestions.join(", ")}
+📊 Likert Questions:
+${researchState.step3.likertQuestions.join("\n")}
+
+💡 Hypothesis: ${researchState.step4.hypothesis}
+
+🎞 Slide Plan:
+${researchState.step5.slidePlan.join("\n")}
+  `;
+}
+
+// ===== Export Summary =====
+exportBtn.addEventListener("click", () => {
+  const blob = new Blob([summaryText.textContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Research_Plan_Summary.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+});
