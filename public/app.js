@@ -77,103 +77,91 @@ function resetChat() {
 function getStepPrompt(step) {
   switch (step) {
     case "1": return `
-You are helping a first-year Japanese university student (lower-intermediate English learner) build a simple research project using a class survey.
+You are helping a university student conduct a small survey in English class. 
+This is not academic research — it is a class exercise to practice making a simple questionnaire, analyzing results, and presenting findings.
 
-First, ask what topic they are interested in (e.g., money, family, phones, stress, future, jobs, dating).
+First, ask what topic they are interested in (e.g., money, time, family, phones, relationships).
 
-Then, if they give a general topic (like \"money\"), suggest 6–7 specific, surveyable ideas using plain and short English.
-
-✅ If the student says \"all of them are interesting\", do NOT ask them to choose just one.
-✅ Instead, say: “It sounds like you want to include many of these ideas in your survey. Let me help you turn them into survey questions!”
-
-📦 When a good list of survey ideas is agreed on, say:
-“Great — now let’s turn these into a good research question!”
+If their answer is vague, give 5–7 simple and measurable examples related to that topic.
+✅ Do NOT say "we must narrow it down more."
+✅ Accept broad interest as long as it can be asked in survey form.
+✅ Confirm their interest and say:
+"Great — let’s move on to making your research question."
 `;
 
     case "2": return `
-The student has chosen a focused topic. Now help them explore it further.
+Now help the student create a simple research question based on their topic.
+Ask: "What do you want to know about that topic?"
 
-Ask:
-- What do you want to know about this topic?
-- What do you want to ask your classmates?
-- What kind of answers do you think they will give?
-
-Then suggest 2–3 good research questions they might use.
-✅ When they choose one, say:
-“Great — we can use that as your research question! Let’s move on to building your questionnaire.”
+Give 2–3 example questions based on their topic that are short, clear, and suitable for a basic survey.
+✅ Accept if the student wants to explore more than one aspect.
+✅ Once the question is set, say:
+"Great — we can use that as your research question! Let’s move on to building your questionnaire."
 `;
 
     case "3": return `
-Help the student create a survey.
-
-Start with 3–4 profile questions (e.g., gender, age, club, part-time job).
-Then make 7–10 Likert scale questions based on their topic.
-
-✅ Use simple and clear language.
-✅ After generating all questions, ask:
-- What else do you want to ask?
-- Are there any questions you want to remove?
-📦 When finished, say:
-“Nice job! Now let’s write your hypothesis.”
+Help the student write questions for a short survey.
+First: write 3–4 profile questions (e.g., gender, grade, part-time job, club activities)
+Then: write 7–10 Likert scale questions related to their research question
+(e.g., "I often spend money on snacks.")
+✅ Keep questions clear and simple.
+✅ End by saying:
+"Nice job! Now let’s write your hypothesis."
 `;
 
     case "4": return `
-Help the student write a hypothesis — a guess based on their topic.
-
-Ask:
-- What do you think your classmates will say?
-- Do you think there is a connection or pattern?
-
-Help them write a clear sentence like:
-“Students who work more hours sleep less.”
-📦 When done, say:
-“Great — let’s make your slide plan.”
+Ask the student:
+- What do you expect most people will answer?
+- Do you think there will be any pattern?
+Help them write 1 short and simple hypothesis.
+✅ It can be just a guess. No need to be formal.
+✅ Then say:
+"Great — let’s make your presentation slide plan."
 `;
 
     case "5": return `
-Help the student make a presentation plan.
-Give ideas for 4–5 slides:
-1. Title & Introduction
+Help the student outline 4–5 slides for a presentation:
+1. Topic & Reason
 2. Research Question
-3. Questionnaire (profile + Likert)
+3. Survey Questions
 4. Hypothesis
-5. What you expect to find
-📦 When finished, say:
-“All done! Let’s check your full summary.”
+5. What you want to find out or expect
+✅ Give simple bullet points or slide titles.
+✅ Then say:
+"All done! Let’s review your full plan."
 `;
 
     case "6": return `
-Final step! Show the full plan:
+Summarize everything the student has done:
 - Topic
 - Research Question
-- Survey Questions
+- Survey (profile + Likert)
 - Hypothesis
 - Slide Plan
-
-Ask if they want to revise anything.
-📦 When ready, say:
-“If you're ready, you can download your plan!”
+✅ Make it clear and neat
+✅ End by saying:
+"If you're ready, you can download your plan!"
 `;
 
     default: return "Let’s get started!";
   }
 }
 
-// ===== Student UI Instructions =====
+// ===== Instructions to Student UI =====
 function getUserFacingInstruction(step) {
   switch (step) {
     case "1":
-      return "What topic are you interested in? (e.g., money, time, family, stress, phones, future)\nLet’s choose something you want to learn more about!";
+      return "What topic are you interested in? (e.g., money, time, jobs)\nYou can also choose topics like: family, friends, phone use, study, sleep, part-time jobs, dating, future, stress.\nLet’s choose something you want to learn more about!";
     case "2":
       return "Now let’s think more about your topic.\nWhat do you want to know about it?\nWhat kind of question do you want to ask your classmates?";
     case "3":
-      return "Let’s make your questionnaire!\nStart with 3–4 profile questions (e.g., gender, part-time job)\nThen write 7–10 survey questions with a 1–5 scale.";
+      return "Let’s make your questionnaire!\nWrite 3–4 profile questions (e.g., age, gender, part-time job)\nThen 7–10 Likert scale questions (1 = strongly disagree ~ 5 = strongly agree).";
     case "4":
-      return "Let’s write your hypothesis!\nWhat do you think your classmates will say?\nTry writing one sentence as your guess.";
+      return "What do you think your classmates will say?\nLet’s make your guess — your hypothesis!";
     case "5":
-      return "Let’s plan your presentation!\nWe’ll make 4–5 simple slides to explain your research.";
+      return "Let’s make your slide plan.\nWe will outline 4–5 slides to show your research.";
     case "6":
-      return "Let’s review your full research plan and download it if you’re ready!";
+      return "This is the final step.\nLet’s check your whole plan and download it if you're ready!";
     default:
       return "Let’s get started!";
   }
@@ -199,44 +187,15 @@ function updateSummary() {
 ❓ Research Question: ${researchState.step2.question}
 
 👤 Profile Questions: ${researchState.step3.profileQuestions.join(", ")}
-📊 Likert Questions:\n${researchState.step3.likertQuestions.join("\n")}
+📊 Likert Questions:
+${researchState.step3.likertQuestions.join("\n")}
 
 💡 Hypothesis: ${researchState.step4.hypothesis}
 
-🎞 Slide Plan:\n${researchState.step5.slidePlan.join("\n")}
+🎞 Slide Plan:
+${researchState.step5.slidePlan.join("\n")}
   `;
 }
-
-// ===== Glossary Popup =====
-const popup = document.getElementById("dictionary-popup");
-const dictionaryResult = document.getElementById("dictionary-result");
-const closePopup = document.getElementById("close-popup");
-const btnMeaning = document.getElementById("btn-meaning");
-const btnSay = document.getElementById("btn-say");
-
-btnMeaning.addEventListener("click", () => {
-  const text = userInput.value.trim() || "No input";
-  dictionaryResult.innerHTML = `
-    <strong>📘 Plain English:</strong> Explanation of "<em>${text}</em>" in easy words.<br><br>
-    <strong>🗣 Context Explanation:</strong> How this term is used in surveys or research.<br><br>
-    <strong>🇯🇵 Japanese:</strong> ${text} の意味
-  `;
-  popup.classList.remove("hidden");
-});
-
-btnSay?.addEventListener("click", () => {
-  const text = userInput.value.trim() || "No input";
-  dictionaryResult.innerHTML = `
-    <strong>💬 Natural English:</strong> A native-like way to say "${text}".<br><br>
-    <strong>✍️ Suggested Rephrase:</strong> Try using: “In my experience, ...” or “It's important that...”<br><br>
-    <strong>🇯🇵 Japanese:</strong> ${text} を英語でどう言うか
-  `;
-  popup.classList.remove("hidden");
-});
-
-closePopup.addEventListener("click", () => {
-  popup.classList.add("hidden");
-});
 
 // ===== Export Summary =====
 const exportBtn = document.getElementById("export-btn");
@@ -248,30 +207,4 @@ exportBtn.addEventListener("click", () => {
   a.download = "Research_Plan_Summary.txt";
   a.click();
   URL.revokeObjectURL(url);
-});
-
-// ===== Make Popup Draggable =====
-const dragTarget = document.getElementById("dictionary-popup");
-const dragHandle = dragTarget.querySelector(".popup-header");
-
-let offsetX = 0;
-let offsetY = 0;
-let isDragging = false;
-
-dragHandle.style.cursor = "move";
-
-dragHandle.addEventListener("mousedown", (e) => {
-  isDragging = true;
-  offsetX = e.clientX - dragTarget.offsetLeft;
-  offsetY = e.clientY - dragTarget.offsetTop;
-});
-
-document.addEventListener("mouseup", () => {
-  isDragging = false;
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
-  dragTarget.style.left = `${e.clientX - offsetX}px`;
-  dragTarget.style.top = `${e.clientY - offsetY}px`;
 });
