@@ -81,91 +81,54 @@ function resetChat() {
 function getStepPrompt(step) {
   switch (step) {
     case "1": return `
-You are helping a first-year university student create a simple in-class research project. 
-The student will collect answers from classmates using a short questionnaire.
+You are helping a Japanese university student with limited English make a simple research project in English class.
 
-First, ask what topic they are interested in (e.g., money, time, jobs, parents, future, relationships, phones, stress). 
+First, ask what topic they are interested in (e.g., family, friends, phone, future, stress).
 
-If the topic is vague or abstract, guide the student by giving 5–7 possible, simple ideas they could study through a short survey. Each idea should be measurable (e.g., hours, habits, opinions).
+If the topic is too general, give 5–7 simple, easy-to-understand ideas related to it that can be studied in a short survey.
 
-✅ Help them explore what they want to know.
-✅ Use short, easy English.
-✅ Be friendly and patient.
-📦 When the student picks one idea, say:
-“Great — let’s move on to the next step: making your research question.”
-`;
+✅ Use short and easy English
+✅ Be kind and guide them patiently
+✅ At the end, ask: “Do you have your own idea?”
+📦 When they choose, say: “Great! Let’s move on to the next step: making your research question.”`;
 
     case "2": return `
-The student has chosen a topic. Now help them explore what they are curious about.
+Now the student has picked a topic. Help them explore it more deeply.
 
-🎯 Ask questions like:
+🎯 Ask these questions in easy English:
 - What do you want to know about this topic?
-- What are you interested in comparing or finding out?
-- What behavior or habit do you think is connected?
+- What do you want to ask your classmates?
+- What do you think others will say?
 
-Then suggest 2–3 possible research questions in simple, clear English. Help the student pick one.
-
-✅ Use simple words.
-✅ Confirm the question is good for a short student survey.
-📦 When the student agrees, say:
-“Great — we can use that as your research question! Let’s move on to building your questionnaire.”
-`;
+Let them explain their thoughts. Then suggest 2–3 good research questions in simple English.
+✅ Confirm it's suitable for a short questionnaire.
+📦 When one is chosen, say:
+“Nice! That will be your research question. Now let’s build your questionnaire.”`;
 
     case "3": return `
-Now it’s time to make the student’s survey questions.
+Time to write the questionnaire.
 
-First, help them write 3–4 profile questions (e.g., gender, age, part-time job, club activities).
+✅ First, suggest 3–4 easy profile questions (e.g., age, gender, club, part-time job).
+✅ Then, suggest 7–10 Likert scale questions (1 = strongly disagree to 5 = strongly agree) related to their research question.
 
-Then, help them create 7–10 Likert scale questions (e.g., “I often stay up late because of my phone. 1 = strongly disagree to 5 = strongly agree”).
+Ask the student:
+- Which questions do you want to keep?
+- Do you want to add or change anything?
 
-✅ Keep questions simple, clear, and related to their research question.
-📦 When complete, say:
-“Nice job! Now let’s write your hypothesis.”
-`;
+📦 After they decide, say:
+“Great — I will now make a Google Form code for you.”`;
 
     case "4": return `
-Help the student think about what kind of result they expect.
+Let’s help the student make a guess (hypothesis) about what their classmates will say.
 
 Ask them:
-- What do you think your classmates will say?
-- Do you think there will be a pattern or connection?
+- What do you think most students will answer?
+- Do you think there will be a pattern?
 
-Then help them write 1 simple hypothesis, like:
-“Students who use their phones before bed will sleep less than those who don’t.”
-
-📦 When ready, say:
-“Great — let’s make a slide plan for your presentation.”
-`;
-
-    case "5": return `
-Help the student make a presentation plan for their research idea.
-
-Give them ideas for 4–5 slides:
-1. Title & Introduction
-2. Research Question
-3. Questionnaire (profile + survey questions)
-4. Hypothesis
-5. What they want to find out or expect
-
-✅ Use short, clear slide ideas with example titles and notes.
-📦 When finished, say:
-“All done! Let’s look at your full summary.”
-`;
-
-    case "6": return `
-This is the final step.
-
-Help the student review their full research plan:
-- Topic
-- Research Question
-- Survey Questions
-- Hypothesis
-- Slide Plan
-
-✅ Offer to make corrections or improvements.
-📦 Then say:
-“If you're ready, you can download your plan!”
-`;
+Then help them write one sentence like:
+“Students who use their phones late at night will sleep less.”
+📦 When done, say:
+“OK! Now let’s plan your slides for the presentation.”`;
 
     default: return "Let’s get started!";
   }
@@ -175,23 +138,17 @@ Help the student review their full research plan:
 function getUserFacingInstruction(step) {
   switch (step) {
     case "1":
-      return "What topic are you interested in? (e.g., money, time, jobs)\n\nYou can also choose topics like:\nfamily, friends, phone use, study, sleep, part-time jobs, dating, future, stress.\n\nLet’s choose something you want to learn more about!";
-      
+      return "What topic are you interested in? (e.g., family, future, phones)\n\nLet’s choose something you want to know more about!";
     case "2":
-      return "Now, let’s think more about your topic.\n\nWhat do you want to know about it?\nWhat do you want to ask your classmates?\n\nLet’s make a simple and clear research question together!";
-
+      return "Now let’s think more about your topic.\n\nWhat do you want to ask classmates? What are you curious about?\n\nLet’s make a simple research question together!";
     case "3":
-      return "Let’s write your questionnaire.\nStart with 3–4 profile questions (e.g., gender, club, part-time job),\nthen 7–10 survey questions about your topic using a 1–5 scale.";
-
+      return "Let’s make your questionnaire.\n\nFirst: 3–4 profile questions (e.g., gender, club, part-time job).\nThen: 7–10 survey questions with 1–5 scale (strongly disagree → strongly agree).";
     case "4":
-      return "What do you think your classmates will say?\nLet’s write your guess — this is your hypothesis!";
-
+      return "What do you think students will say in your survey?\nLet’s write your prediction — this is your hypothesis!";
     case "5":
-      return "Now let’s plan your presentation.\nWe will make slide ideas to explain your research to your classmates.";
-
+      return "Let’s make your slide plan.\nMake 4–5 slides to explain your research idea.";
     case "6":
-      return "This is the final step.\nLet’s check your research plan and download it if you’re finished.";
-
+      return "This is the last step!\nCheck your full plan and download it if ready.";
     default:
       return "Let’s get started!";
   }
@@ -207,7 +164,9 @@ function storeResult(step, content) {
       researchState.step2.question = content;
       break;
     case "3":
-      researchState.step3.likertQuestions = content.split("\n");
+      const [profilePart, likertPart] = content.split("Likert:");
+      researchState.step3.profileQuestions = profilePart.trim().split("\n").filter(q => q);
+      researchState.step3.likertQuestions = likertPart?.trim().split("\n").filter(q => q) || [];
       break;
     case "4":
       researchState.step4.hypothesis = content;
@@ -282,6 +241,7 @@ exportBtn.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
 });
+
 // ===== Make Glossary Popup Draggable =====
 const dragTarget = document.getElementById("dictionary-popup");
 const dragHandle = dragTarget.querySelector(".popup-header");
@@ -307,4 +267,3 @@ document.addEventListener("mousemove", (e) => {
   dragTarget.style.left = `${e.clientX - offsetX}px`;
   dragTarget.style.top = `${e.clientY - offsetY}px`;
 });
-
