@@ -3,7 +3,7 @@ const researchState = {
   currentStep: null,
   step1: { theme: "", chat: [] },
   step2: { question: "", chat: [] },
-  step3: { profileQuestions: [], likertQuestions: [] },
+  step3: { profileQuestions: [], likertQuestions: [], multipleChoiceQuestions: [] },
   step4: { hypothesis: "" },
   step5: { slidePlan: [] },
   step6: { exportSummary: "" }
@@ -82,8 +82,6 @@ You are helping a university student conduct a small survey in English class.
 This is not academic research — it is a class exercise to practice making a simple questionnaire, analyzing results, and presenting findings.
 
 First, ask what topic they are interested in (e.g., money, time, family, phones, relationships).
-
-If their answer is vague, give 5–7 simple and measurable examples related to that topic.
 ✅ Do NOT say "we must narrow it down more."
 ✅ Accept broad interest as long as it can be asked in survey form.
 ✅ Confirm their interest and say:
@@ -102,11 +100,20 @@ Give 2–3 example questions based on their topic that are short, clear, and sui
 
     case "3": return `
 Help the student write questions for a short survey.
-First: write 3–4 profile questions (e.g., gender, grade, part-time job, club activities)
-Then: write 7–10 Likert scale questions related to their research question
-(e.g., "I often spend money on snacks.")
-✅ Keep questions clear and simple.
-✅ End by saying:
+
+First: write 3–4 profile questions  
+(e.g., gender, grade, part-time job, club activities)
+
+Then: write 4–5 Likert scale questions  
+(e.g., "I want to work with friendly people.")
+
+Then: write 3–4 multiple choice questions  
+Some can be comparisons (e.g., "Which is more important to you: Pay or Location?")  
+Some can be prioritization (e.g., "What is the most important factor in choosing a job?")
+
+✅ Keep questions short and simple  
+✅ Use easy English for beginner-level students  
+✅ End by saying:  
 "Nice job! Now let’s write your hypothesis."
 `;
 
@@ -136,7 +143,7 @@ Help the student outline 4–5 slides for a presentation:
 Summarize everything the student has done:
 - Topic
 - Research Question
-- Survey (profile + Likert)
+- Survey (profile + Likert + multiple choice)
 - Hypothesis
 - Slide Plan
 ✅ Make it clear and neat
@@ -156,7 +163,7 @@ function getUserFacingInstruction(step) {
     case "2":
       return "Now let’s think more about your topic.\nWhat do you want to know about it?\nWhat kind of question do you want to ask your classmates?";
     case "3":
-      return "Let’s make your questionnaire!\nWrite 3–4 profile questions (e.g., age, gender, part-time job)\nThen 7–10 Likert scale questions (1 = strongly disagree ~ 5 = strongly agree).";
+      return "Let’s make your questionnaire!\nWrite 3–4 profile questions (e.g., age, gender, part-time job)\nThen 4–5 Likert scale questions\nThen 3–4 multiple choice questions (comparison or priority).";
     case "4":
       return "What do you think your classmates will say?\nLet’s make your guess — your hypothesis!";
     case "5":
@@ -174,9 +181,10 @@ function storeResult(step, content) {
     case "1": researchState.step1.theme = content; break;
     case "2": researchState.step2.question = content; break;
     case "3":
-      const lines = content.split("\n");
-      researchState.step3.profileQuestions = lines.slice(0, 4);
-      researchState.step3.likertQuestions = lines.slice(4);
+      const [profile, likert, multiple] = content.split("**Likert Scale Questions:**")[1].split("**Multiple Choice Questions:**");
+      researchState.step3.profileQuestions = profile.trim().split("\n").filter(line => line);
+      researchState.step3.likertQuestions = likert.trim().split("\n").filter(line => line);
+      researchState.step3.multipleChoiceQuestions = multiple.trim().split("\n").filter(line => line);
       break;
     case "4": researchState.step4.hypothesis = content; break;
     case "5": researchState.step5.slidePlan = content.split("\n"); break;
@@ -191,11 +199,17 @@ function updateSummary() {
 📌 Topic: ${researchState.step1.theme}
 ❓ Research Question: ${researchState.step2.question}
 
-👤 Profile Questions: ${researchState.step3.profileQuestions.join(", ")}
-📊 Likert Questions:
+👤 Profile Questions:
+${researchState.step3.profileQuestions.join("\n")}
+
+📊 Likert Scale Questions:
 ${researchState.step3.likertQuestions.join("\n")}
 
-💡 Hypothesis: ${researchState.step4.hypothesis}
+🔘 Multiple Choice Questions:
+${researchState.step3.multipleChoiceQuestions.join("\n")}
+
+💡 Hypothesis:
+${researchState.step4.hypothesis}
 
 🎞 Slide Plan:
 ${researchState.step5.slidePlan.join("\n")}
