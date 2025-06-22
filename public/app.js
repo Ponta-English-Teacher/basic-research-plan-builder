@@ -193,32 +193,3 @@ function storeResult(step, content) {
 // ===== Update Summary View =====
 function updateSummary() {
   summaryText.textContent = `
-📌 Topic: ${researchState.step1.theme}
-❓ Research Question: ${researchState.step2.question}
-
-👤 Profile Questions:
-${researchState.step3.profileQuestions.join("\n")}
-
-📊 Likert Scale Questions:
-${researchState.step3.likertQuestions.join("\n")}
-
-🔘 Multiple Choice Questions:
-${researchState.step3.multipleChoiceQuestions.join("\n")}
-
-💡 Hypothesis: ${researchState.step4.hypothesis}
-
-🎞 Slide Plan:
-${researchState.step5.slidePlan.join("\n")}
-  `;
-}
-
-// ===== Export Button =====
-exportBtn.addEventListener("click", () => {
-  const blob = new Blob([summaryText.textContent], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Research_Plan_Summary.txt";
-  a.click();
-  URL.revokeObjectURL(url);
-});
