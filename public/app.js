@@ -77,8 +77,7 @@ function resetChat() {
 // ===== Step Prompts =====
 function getStepPrompt(step) {
   switch (step) {
-    case "1": return `
-You are helping a university student conduct a small survey in English class.
+    case "1": return `You are helping a university student conduct a small survey in English class.
 This is not academic research — it is a class exercise to practice making a simple questionnaire, analyzing results, and presenting findings.
 First, ask what topic they are interested in (e.g., money, time, family, phones, relationships).
 If their answer is vague, give 5–7 simple and measurable examples related to that topic.
@@ -87,16 +86,14 @@ If their answer is vague, give 5–7 simple and measurable examples related to t
 ✅ Confirm their interest and say:
 "Great — let’s move on to making your research question."`;
 
-    case "2": return `
-Now help the student create a simple research question based on their topic.
+    case "2": return `Now help the student create a simple research question based on their topic.
 Ask: "What do you want to know about that topic?"
 Give 2–3 example questions based on their topic that are short, clear, and suitable for a basic survey.
 ✅ Accept if the student wants to explore more than one aspect.
 ✅ Once the question is set, say:
 "Great — we can use that as your research question! Let’s move on to building your questionnaire."`;
 
-    case "3": return `
-Help the student write questions for a short survey.
+    case "3": return `Help the student write questions for a short survey.
 First: write 3–4 profile questions (e.g., gender, grade, part-time job, club activities)
 Then: write 4–5 Likert scale questions
 Then: write 3–4 multiple choice questions (e.g., which is more important, which do you prefer, how often)
@@ -104,8 +101,7 @@ Then: write 3–4 multiple choice questions (e.g., which is more important, whic
 ✅ End by saying:
 "Nice job! Now let’s write your hypothesis."`;
 
-    case "4": return `
-Ask the student:
+    case "4": return `Ask the student:
 - What do you expect most people will answer?
 - Do you think there will be any pattern?
 Help them write 1 short and simple hypothesis.
@@ -113,8 +109,7 @@ Help them write 1 short and simple hypothesis.
 ✅ Then say:
 "Great — let’s make your presentation slide plan."`;
 
-    case "5": return `
-Help the student outline 4–5 slides for a presentation:
+    case "5": return `Help the student outline 4–5 slides for a presentation:
 1. Topic & Reason
 2. Research Question
 3. Survey Questions
@@ -124,8 +119,7 @@ Help the student outline 4–5 slides for a presentation:
 ✅ Then say:
 "All done! Let’s review your full plan."`;
 
-    case "6": return `
-Summarize everything the student has done:
+    case "6": return `Summarize everything the student has done:
 - Topic
 - Research Question
 - Survey (profile + Likert + multiple choice)
@@ -142,20 +136,13 @@ Summarize everything the student has done:
 // ===== User Instructions =====
 function getUserFacingInstruction(step) {
   switch (step) {
-    case "1":
-      return "What topic are you interested in? (e.g., money, time, jobs, phones, stress, family, future)";
-    case "2":
-      return "What do you want to know about that topic? Let’s make your research question.";
-    case "3":
-      return "Let’s make your questionnaire!\nWrite 3–4 profile questions (e.g., age, gender, part-time job)\nThen 4–5 Likert scale questions\nThen 3–4 multiple choice questions (comparison or priority).";
-    case "4":
-      return "What do you think your classmates will say? Let’s write your hypothesis.";
-    case "5":
-      return "Let’s outline your slides for your research presentation.";
-    case "6":
-      return "Let’s check your whole plan and download it if you're ready!";
-    default:
-      return "Let’s get started!";
+    case "1": return "What topic are you interested in? (e.g., money, time, jobs, phones, stress, family, future)";
+    case "2": return "What do you want to know about that topic? Let’s make your research question.";
+    case "3": return "Let’s make your questionnaire!\nWrite 3–4 profile questions (e.g., age, gender, part-time job)\nThen 4–5 Likert scale questions\nThen 3–4 multiple choice questions (comparison or priority).";
+    case "4": return "What do you think your classmates will say? Let’s write your hypothesis.";
+    case "5": return "Let’s outline your slides for your research presentation.";
+    case "6": return "Let’s check your whole plan and download it if you're ready!";
+    default: return "Let’s get started!";
   }
 }
 
@@ -168,10 +155,8 @@ function storeResult(step, content) {
       researchState.step3.profileQuestions = [];
       researchState.step3.likertQuestions = [];
       researchState.step3.multipleChoiceQuestions = [];
-
       const lines = content.split("\n");
       let currentType = "";
-
       lines.forEach(line => {
         if (line.includes("Profile Questions")) currentType = "profile";
         else if (line.includes("Likert")) currentType = "likert";
@@ -193,3 +178,32 @@ function storeResult(step, content) {
 // ===== Update Summary View =====
 function updateSummary() {
   summaryText.textContent = `
+📌 Topic: ${researchState.step1.theme}
+❓ Research Question: ${researchState.step2.question}
+
+👤 Profile Questions:
+${researchState.step3.profileQuestions.join("\n")}
+
+📊 Likert Scale Questions:
+${researchState.step3.likertQuestions.join("\n")}
+
+🔘 Multiple Choice Questions:
+${researchState.step3.multipleChoiceQuestions.join("\n")}
+
+💡 Hypothesis: ${researchState.step4.hypothesis}
+
+🎞 Slide Plan:
+${researchState.step5.slidePlan.join("\n")}
+  `;
+}
+
+// ===== Export Button =====
+exportBtn.addEventListener("click", () => {
+  const blob = new Blob([summaryText.textContent], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Research_Plan_Summary.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+});
