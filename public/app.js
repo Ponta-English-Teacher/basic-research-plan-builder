@@ -78,44 +78,31 @@ function resetChat() {
 function getStepPrompt(step) {
   switch (step) {
     case "1": return `
-You are helping a university student conduct a small survey in English class. 
+You are helping a university student conduct a small survey in English class.
 This is not academic research — it is a class exercise to practice making a simple questionnaire, analyzing results, and presenting findings.
-
 First, ask what topic they are interested in (e.g., money, time, family, phones, relationships).
+If their answer is vague, give 5–7 simple and measurable examples related to that topic.
 ✅ Do NOT say "we must narrow it down more."
 ✅ Accept broad interest as long as it can be asked in survey form.
 ✅ Confirm their interest and say:
-"Great — let’s move on to making your research question."
-`;
+"Great — let’s move on to making your research question."`;
 
     case "2": return `
 Now help the student create a simple research question based on their topic.
 Ask: "What do you want to know about that topic?"
-
 Give 2–3 example questions based on their topic that are short, clear, and suitable for a basic survey.
 ✅ Accept if the student wants to explore more than one aspect.
 ✅ Once the question is set, say:
-"Great — we can use that as your research question! Let’s move on to building your questionnaire."
-`;
+"Great — we can use that as your research question! Let’s move on to building your questionnaire."`;
 
     case "3": return `
 Help the student write questions for a short survey.
-
-First: write 3–4 profile questions  
-(e.g., gender, grade, part-time job, club activities)
-
-Then: write 4–5 Likert scale questions  
-(e.g., "I want to work with friendly people.")
-
-Then: write 3–4 multiple choice questions  
-Some can be comparisons (e.g., "Which is more important to you: Pay or Location?")  
-Some can be prioritization (e.g., "What is the most important factor in choosing a job?")
-
-✅ Keep questions short and simple  
-✅ Use easy English for beginner-level students  
-✅ End by saying:  
-"Nice job! Now let’s write your hypothesis."
-`;
+First: write 3–4 profile questions (e.g., gender, grade, part-time job, club activities)
+Then: write 4–5 Likert scale questions
+Then: write 3–4 multiple choice questions (e.g., which is more important, which do you prefer, how often)
+✅ Keep questions clear and simple.
+✅ End by saying:
+"Nice job! Now let’s write your hypothesis."`;
 
     case "4": return `
 Ask the student:
@@ -124,8 +111,7 @@ Ask the student:
 Help them write 1 short and simple hypothesis.
 ✅ It can be just a guess. No need to be formal.
 ✅ Then say:
-"Great — let’s make your presentation slide plan."
-`;
+"Great — let’s make your presentation slide plan."`;
 
     case "5": return `
 Help the student outline 4–5 slides for a presentation:
@@ -136,8 +122,7 @@ Help the student outline 4–5 slides for a presentation:
 5. What you want to find out or expect
 ✅ Give simple bullet points or slide titles.
 ✅ Then say:
-"All done! Let’s review your full plan."
-`;
+"All done! Let’s review your full plan."`;
 
     case "6": return `
 Summarize everything the student has done:
@@ -148,43 +133,55 @@ Summarize everything the student has done:
 - Slide Plan
 ✅ Make it clear and neat
 ✅ End by saying:
-"If you're ready, you can download your plan!"
-`;
+"If you're ready, you can download your plan!"`;
 
     default: return "Let’s get started!";
   }
 }
 
-// ===== Instructions to Student UI =====
+// ===== User Instructions =====
 function getUserFacingInstruction(step) {
   switch (step) {
     case "1":
-      return "What topic are you interested in? (e.g., money, time, jobs)\nYou can also choose topics like: family, friends, phone use, study, sleep, part-time jobs, dating, future, stress.\nLet’s choose something you want to learn more about!";
+      return "What topic are you interested in? (e.g., money, time, jobs, phones, stress, family, future)";
     case "2":
-      return "Now let’s think more about your topic.\nWhat do you want to know about it?\nWhat kind of question do you want to ask your classmates?";
+      return "What do you want to know about that topic? Let’s make your research question.";
     case "3":
       return "Let’s make your questionnaire!\nWrite 3–4 profile questions (e.g., age, gender, part-time job)\nThen 4–5 Likert scale questions\nThen 3–4 multiple choice questions (comparison or priority).";
     case "4":
-      return "What do you think your classmates will say?\nLet’s make your guess — your hypothesis!";
+      return "What do you think your classmates will say? Let’s write your hypothesis.";
     case "5":
-      return "Let’s make your slide plan.\nWe will outline 4–5 slides to show your research.";
+      return "Let’s outline your slides for your research presentation.";
     case "6":
-      return "This is the final step.\nLet’s check your whole plan and download it if you're ready!";
+      return "Let’s check your whole plan and download it if you're ready!";
     default:
       return "Let’s get started!";
   }
 }
 
-// ===== Store Step Output =====
+// ===== Store GPT Output =====
 function storeResult(step, content) {
   switch (step) {
     case "1": researchState.step1.theme = content; break;
     case "2": researchState.step2.question = content; break;
     case "3":
-      const [profile, likert, multiple] = content.split("**Likert Scale Questions:**")[1].split("**Multiple Choice Questions:**");
-      researchState.step3.profileQuestions = profile.trim().split("\n").filter(line => line);
-      researchState.step3.likertQuestions = likert.trim().split("\n").filter(line => line);
-      researchState.step3.multipleChoiceQuestions = multiple.trim().split("\n").filter(line => line);
+      researchState.step3.profileQuestions = [];
+      researchState.step3.likertQuestions = [];
+      researchState.step3.multipleChoiceQuestions = [];
+
+      const lines = content.split("\n");
+      let currentType = "";
+
+      lines.forEach(line => {
+        if (line.includes("Profile Questions")) currentType = "profile";
+        else if (line.includes("Likert")) currentType = "likert";
+        else if (line.includes("Multiple Choice")) currentType = "multiple";
+        else if (line.trim().match(/^\d+\./)) {
+          if (currentType === "profile") researchState.step3.profileQuestions.push(line.trim());
+          if (currentType === "likert") researchState.step3.likertQuestions.push(line.trim());
+          if (currentType === "multiple") researchState.step3.multipleChoiceQuestions.push(line.trim());
+        }
+      });
       break;
     case "4": researchState.step4.hypothesis = content; break;
     case "5": researchState.step5.slidePlan = content.split("\n"); break;
@@ -208,15 +205,14 @@ ${researchState.step3.likertQuestions.join("\n")}
 🔘 Multiple Choice Questions:
 ${researchState.step3.multipleChoiceQuestions.join("\n")}
 
-💡 Hypothesis:
-${researchState.step4.hypothesis}
+💡 Hypothesis: ${researchState.step4.hypothesis}
 
 🎞 Slide Plan:
 ${researchState.step5.slidePlan.join("\n")}
   `;
 }
 
-// ===== Export Summary =====
+// ===== Export Button =====
 exportBtn.addEventListener("click", () => {
   const blob = new Blob([summaryText.textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
