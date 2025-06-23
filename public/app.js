@@ -60,7 +60,12 @@ sendBtn.addEventListener("click", async () => {
 
   const reply = await chatWithGPT(researchState.currentStep, userMessage);
   appendMessage("gpt", reply);
-  researchState[researchState.currentStep].chat.push({ role: "gpt", content: reply });
+  if (!researchState[researchState.currentStep]) {
+  researchState[researchState.currentStep] = { chat: [] };
+} else if (!Array.isArray(researchState[researchState.currentStep].chat)) {
+  researchState[researchState.currentStep].chat = [];
+}
+researchState[researchState.currentStep].chat.push({ role: "gpt", content: reply });
 
   if (researchState.currentStep === "1" && reply.toLowerCase().includes("let’s move on to making your research question")) {
     const extractedTheme = extractFromReply(reply, "1");
