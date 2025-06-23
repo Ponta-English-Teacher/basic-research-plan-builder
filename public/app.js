@@ -109,12 +109,18 @@ sendBtn.addEventListener("click", async () => {
 async function chatWithGPT(step, currentUserMessage) {
   const topic = researchState.step1.theme?.trim() || "[unspecified topic]";
   const researchQuestion = researchState.step2.question?.trim() || "[unspecified question]";
+
   let messages = [{ role: "system", content: getStepPrompt(step, topic, researchQuestion) }];
+
   let history = Array.isArray(researchState[step]?.chat) ? researchState[step].chat : [];
+  history = history.filter(msg => msg && msg.role && msg.content && typeof msg.content === 'string');
+
   const MAX_HISTORY = 7;
   if (history.length > MAX_HISTORY) history = history.slice(-MAX_HISTORY);
-  history.forEach(msg => messages.push(msg));
-  console.log("🔍 Sending GPT Messages:", messages.map(m => `${m.role}: ${m.content.slice(0, 100)}`));
+
+  messages.push(...history);
+
+  console.log("🔍 Sending GPT Messages:", messages);
 
   try {
     const response = await fetch("/api/openai", {
