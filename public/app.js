@@ -30,16 +30,16 @@ const exportBtn = document.getElementById("export-btn");
 function extractFromReply(reply, step, subStep = null) {
     if (step === "1") {
         // For Step 1, the GPT confirms the topic. We want to extract just that.
-        // Look for the last user message or a clear confirmation from GPT.
-        // A simple approach for now: if GPT confirms, try to find a capitalized word as the topic,
-        // or just rely on the user's last input for now.
-        // BEST: GPT is prompted to say "Your topic is [X]"
+        // It's best to extract from GPT's confirmed reply if possible, but for simple topic, user's input is fine.
+        // If GPT says "Great topic! Your topic is [X]", you'd want to parse that.
+        // For now, sticking with the user's last message as the theme after the GPT has acknowledged.
         const userMessage = researchState.step1.chat.findLast(msg => msg.role === 'user')?.content;
         return userMessage || "N/A"; // Fallback to user's direct input
     } else if (step === "2") {
         // For Step 2, GPT suggests questions and then confirms.
         // Example: "1. What are the most important factors for people when choosing a job? ... Great — we can use that as your research question!"
-        const match = reply.match(/1\. ([^\n]+)/); // Extract the first numbered suggestion
+        // Try to extract the suggested question (e.g., from a "1. " format)
+        const match = reply.match(/\d+\. ([^\n]+)/); // Extract any numbered suggestion
         if (match && match[1]) {
             return match[1].trim();
         }
@@ -112,11 +112,53 @@ sendBtn.addEventListener("click", async () => {
     researchState[researchState.currentStep].chat.push({ role: "gpt", content: reply });
   }
 
-  // Use the new extractFromReply helper for steps 1 and 2
-  const extractedContent = extractFromReply(reply, researchState.currentStep, researchState.step3SubStep);
-  storeResult(researchState.currentStep, extractedContent); // Pass extracted content to store
+  // --- START CRUCIAL STEP TRANSITION LOGIC ---
+  // This needs to happen BEFORE the generic storeResult, as it might transition steps
+  // and clear chat history.
 
-  // --- NEW LOGIC: Manage sub-steps within Step 3 ---
+  // Transition from Step 1 to Step 2
+  if (researchState.currentStep === "1" && reply.toLowerCase().includes("let’s move on to making your research question")) {
+      console.log("GPT signaled transition from Step 1 to Step 2.");
+      // Before transitioning, store the extracted theme
+      const extractedTheme = extractFromReply(reply, "1");
+      researchState.step1.theme = extractedTheme;
+      storeResult("1", extractedTheme); // Update summary and output display
+
+      researchState.currentStep = "2"; // Move to next step
+      resetChat(); // Clear chat log for the new step
+      appendMessage("gpt", getUserFacingInstruction(researchState.currentStep)); // Show new step's instruction
+      // Also clear previous step's chat history once it's done and we've moved on
+      if(researchState.step1.chat) researchState.step1.chat = [];
+      updateSummary(); // Update summary with the new step's prompt
+      return; // Stop further processing for this turn as we've transitioned
+  }
+
+  // Transition from Step 2 to Step 3
+  if (researchState.currentStep === "2" && reply.toLowerCase().includes("let’s move on to building your questionnaire")) {
+      console.log("GPT signaled transition from Step 2 to Step 3.");
+      // Before transitioning, store the extracted research question
+      const extractedQuestion = extractFromReply(reply, "2");
+      researchState.step2.question = extractedQuestion;
+      storeResult("2", extractedQuestion); // Update summary and output display
+
+      researchState.currentStep = "3"; // Move to next step
+      researchState.step3SubStep = null; // Ensure initial sub-step prompt for Step 3
+      resetChat(); // Clear chat log for the new step
+      appendMessage("gpt", getUserFacingInstruction(researchState.currentStep)); // Show new step's instruction
+      // Also clear previous step's chat history once it's done and we've moved on
+      if(researchState.step2.chat) researchState.step2.chat = [];
+      updateSummary(); // Update summary with the new step's prompt
+      return; // Stop further processing for this turn as we've transitioned
+  }
+
+  // --- END CRUCIAL STEP TRANSITION LOGIC ---
+
+  // Original storeResult call (only happens if no transition occurred for Steps 1/2)
+  // For Step 3 (and potentially other multi-turn steps without direct transitions), we still want this.
+  const extractedContent = extractFromReply(reply, researchState.currentStep, researchState.step3SubStep);
+  storeResult(researchState.currentStep, extractedContent);
+
+  // --- EXISTING LOGIC: Manage sub-steps within Step 3 ---
   if (researchState.currentStep === "3") {
     // Initial entry into Step 3 (this logic happens on user's first reply within Step 3)
     if (researchState.step3SubStep === null) {
