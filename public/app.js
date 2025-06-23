@@ -204,6 +204,32 @@ ${researchState.step5.slidePlan.join("\n") || "Not yet defined"}
   `;
 }
 
+function getUserFacingInstruction(step) {
+  switch (step) {
+    case "1":
+      return "What topic are you interested in? (e.g., money, time, jobs)\nYou can also choose topics like: family, friends, phone use, study, sleep, part-time jobs, dating, future, stress.\nLet’s choose something you want to learn more about!";
+    case "2":
+      return "Now let’s think more about your topic.\nWhat do you want to know about it?\nWhat kind of question do you want to ask your classmates?";
+    case "3":
+      if (researchState.step3SubStep === 'profile') {
+        return "We're setting up your Profile Questions. Tell me, what kind of background information about your respondents do you think is important for your survey?";
+      } else if (researchState.step3SubStep === 'multipleChoice') {
+        return "Great! Now let's work on your Multiple Choice Questions. What specific aspects related to your topic would you like to give options for?";
+      } else if (researchState.step3SubStep === 'likert') {
+        return "Excellent! Let's now create your Likert Scale Questions. Think about statements related to your topic that people can strongly agree or disagree with.";
+      }
+      return "Let's build your questionnaire in three parts: Profile Questions, Multiple Choice Questions, and Likert Scale Questions. We'll start with Profile Questions.";
+    case "4":
+      return "What do you think your classmates will say?\nLet’s make your guess — your hypothesis!";
+    case "5":
+      return "Let’s make your slide plan.\nWe will outline 4–5 slides to show your research.";
+    case "6":
+      return "This is the final step.\nLet’s check your whole plan and download it if you're ready!";
+    default:
+      return "Let’s get started!";
+  }
+}
+
 exportBtn.addEventListener("click", () => {
   const blob = new Blob([summaryText.textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
