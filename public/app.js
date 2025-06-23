@@ -230,6 +230,116 @@ function getUserFacingInstruction(step) {
   }
 }
 
+function getStepPrompt(step, topic, researchQuestion) {
+  switch (step) {
+    case "1":
+      return `
+You are helping a university student conduct a small survey in English class.
+This is not academic research — it is a class exercise to practice making a simple questionnaire, analyzing results, and presenting findings.
+
+First, ask what topic they are interested in (e.g., money, time, family, phones, relationships).
+
+If their answer is vague, give 5–7 simple and measurable examples related to that topic.
+✅ Do NOT say "we must narrow it down more."
+✅ Accept broad interest as long as it can be asked in survey form.
+✅ Confirm their interest and say:
+"Great — let’s move on to making your research question."
+`;
+
+    case "2":
+      return `
+Now help the student create a simple research question based on their topic.
+Ask: "What do you want to know about that topic?"
+
+Give 2–3 example questions based on their topic that are short, clear, and suitable for a basic survey.
+✅ Accept if the student wants to explore more than one aspect.
+✅ Once the question is set, say:
+"Great — we can use that as your research question! Let’s move on to building your questionnaire."
+`;
+
+    case "3":
+      switch (researchState.step3SubStep) {
+        case "profile":
+          return `
+You are helping a university student create a survey. Their **established topic is "${topic}"** and their **specific research question is "${researchQuestion}"**.
+
+Your current task is to help them define "Profile Questions." These questions help understand the background of the survey taker.
+
+First, ask: "Considering your research topic (${topic}) and question, what background factors do you think might affect how people answer your survey?"
+Then, suggest 3–4 examples of profile questions (e.g., age, gender, part-time job status, number of family members).
+End with: "Great! Once you're happy with these, we can move to multiple-choice questions."
+`;
+
+        case "multipleChoice":
+          return `
+Now help the student create 3–4 Multiple Choice Questions related to their research question: "${researchQuestion}" under topic: "${topic}".
+
+Each question should include 4–5 options.
+End with: "Once you're ready, we’ll move on to Likert scale questions."
+`;
+
+        case "likert":
+          return `
+Now suggest 3–5 Likert scale statements related to their topic (${topic}) and research question (${researchQuestion}).
+
+The student will ask respondents to rate how much they agree with each statement from 1 (Strongly Disagree) to 5 (Strongly Agree).
+
+End with: "Great — we can use these for your questionnaire! Let’s move on to writing your hypothesis."
+`;
+
+        default:
+          return `
+Let's start building your questionnaire. We'll create:
+1. Profile Questions
+2. Multiple Choice Questions
+3. Likert Scale Questions
+
+Start by asking what kind of background information might be useful to collect.
+`;
+      }
+
+    case "4":
+      return `
+Ask the student:
+- What do you expect most people will answer?
+- Do you think there will be any pattern?
+
+Help them write 1 short and simple hypothesis.
+✅ Then say:
+"Great — let’s make your presentation slide plan."
+`;
+
+    case "5":
+      return `
+Help the student outline 4–5 slides for a presentation:
+1. Topic & Reason
+2. Research Question
+3. Survey Questions
+4. Hypothesis
+5. What they expect to find
+
+✅ Then say:
+"All done! Let’s review your full plan."
+`;
+
+    case "6":
+      return `
+Summarize everything the student has created:
+- Topic
+- Research Question
+- Survey (profile + multiple-choice + Likert)
+- Hypothesis
+- Slide Plan
+
+✅ End with:
+"If you're ready, you can download your plan!"
+`;
+
+    default:
+      return "Let’s begin.";
+  }
+}
+
 exportBtn.addEventListener("click", () => {
   const blob = new Blob([summaryText.textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
