@@ -48,9 +48,14 @@ sendBtn.addEventListener("click", async () => {
   appendMessage("user", userMessage);
   userInput.value = "";
 
-  if (!Array.isArray(researchState[researchState.currentStep].chat)) {
+  if (!researchState[researchState.currentStep] || !Array.isArray(researchState[researchState.currentStep].chat)) {
+  console.warn("Invalid or missing step detected:", researchState.currentStep);
+  if (!researchState[researchState.currentStep]) {
+    researchState[researchState.currentStep] = { chat: [] };
+  } else {
     researchState[researchState.currentStep].chat = [];
   }
+}
   researchState[researchState.currentStep].chat.push({ role: "user", content: userMessage });
 
   const reply = await chatWithGPT(researchState.currentStep, userMessage);
