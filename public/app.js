@@ -1,16 +1,16 @@
-// app.js
+// app.js (Full code with the most likely fix applied to chatWithGPT)
 
 // ===== App State =====
 const researchState = {
   currentStep: null,
   step3SubStep: null, // 'profile', 'multipleChoice', 'likert'
-  step1: { theme: "", chat: [] },
+  step1: { theme: "", chat: [] }, // Chat history for the current step's conversation
   step2: { question: "", chat: [] },
   step3: {
     profileQuestions: [],
     multipleChoiceQuestions: [],
     likertQuestions: [],
-    chat: [] // Chat history for the current step's conversation
+    chat: []
   },
   step4: { hypothesis: "", chat: [] },
   step5: { slidePlan: [], chat: [] },
@@ -40,9 +40,12 @@ stepButtons.forEach(btn => {
     }
 
     resetChat();
-    appendMessage("gpt", getUserFacingInstruction(step));
+    // Get the initial user-facing instruction for the step
+    const initialInstruction = getUserFacingInstruction(step);
+    appendMessage("gpt", initialInstruction);
 
     // Clear chat history for the new step when switching
+    // This ensures a fresh conversation for each step when initiated by button click
     if (researchState[step] && researchState[step].chat) {
         researchState[step].chat = [];
     }
@@ -58,17 +61,24 @@ sendBtn.addEventListener("click", async () => {
   userInput.value = "";
 
   // Store user message in current step's chat history
+  // This must happen *before* chatWithGPT is called, so it's included in the history
   if (researchState.currentStep && researchState[researchState.currentStep] && researchState[researchState.currentStep].chat) {
     researchState[researchState.currentStep].chat.push({ role: "user", content: userMessage });
+  } else {
+      // Fallback: If chat history array isn't initialized for some reason
+      console.warn(`Chat history for step ${researchState.currentStep} was not initialized. Initializing now.`);
+      researchState[researchState.currentStep] = researchState[researchState.currentStep] || {};
+      researchState[researchState.currentStep].chat = [{ role: "user", content: userMessage }];
   }
 
-  const reply = await chatWithGPT(researchState.currentStep, userMessage);
+  const reply = await chatWithGPT(researchState.currentStep); // No need to pass userMessage, it's in history
   appendMessage("gpt", reply);
 
   // Store GPT reply in current step's chat history
   if (researchState.currentStep && researchState[researchState.currentStep] && researchState[researchState.currentStep].chat) {
     researchState[researchState.currentStep].chat.push({ role: "gpt", content: reply });
   }
+
 
   storeResult(researchState.currentStep, reply);
 
@@ -80,30 +90,24 @@ sendBtn.addEventListener("click", async () => {
     }
 
     // Progression from profile to multipleChoice
-    // This assumes the GPT's reply for profile questions will signal the next stage.
-    // Example: "Great! Here are some profile questions. Now, let's move on to multiple-choice questions."
     if (researchState.step3SubStep === 'profile' && reply.toLowerCase().includes("multiple-choice questions")) {
       researchState.step3SubStep = 'multipleChoice';
-      // Immediately send the instruction for the new sub-step
-      appendMessage("gpt", getUserFacingInstruction(researchState.currentStep));
-      // You might also want to send an API call here for the first MCQ suggestions
-      const mcqReply = await chatWithGPT(researchState.currentStep, "User is ready for multiple-choice questions.");
-      appendMessage("gpt", mcqReply);
-      storeResult(researchState.currentStep, mcqReply);
+      appendMessage("gpt", getUserFacingInstruction(researchState.currentStep)); // Update instruction for user
+      // Optionally, make another API call here to get the initial MCQs suggestions
+      // const mcqReply = await chatWithGPT(researchState.currentStep); // GPT will get the new prompt
+      // appendMessage("gpt", mcqReply);
+      // storeResult(researchState.currentStep, mcqReply);
     }
     // Progression from multipleChoice to likert
-    // Example: "Excellent multiple-choice questions! Next, let's create your Likert scale questions."
     else if (researchState.step3SubStep === 'multipleChoice' && reply.toLowerCase().includes("likert scale questions")) {
       researchState.step3SubStep = 'likert';
-      // Immediately send the instruction for the new sub-step
-      appendMessage("gpt", getUserFacingInstruction(researchState.currentStep));
-      // You might also want to send an API call here for the first Likert suggestions
-      const likertReply = await chatWithGPT(researchState.currentStep, "User is ready for Likert scale questions.");
-      appendMessage("gpt", likertReply);
-      storeResult(researchState.currentStep, likertReply);
+      appendMessage("gpt", getUserFacingInstruction(researchState.currentStep)); // Update instruction for user
+      // Optionally, make another API call here to get the initial Likert suggestions
+      // const likertReply = await chatWithGPT(researchState.currentStep); // GPT will get the new prompt
+      // appendMessage("gpt", likertReply);
+      // storeResult(researchState.currentStep, likertReply);
     }
     // Progression from likert to step 4 (completion of step 3)
-    // Example: "Great — we can use these for your questionnaire! Let’s move on to writing your hypothesis."
     else if (researchState.step3SubStep === 'likert' && reply.toLowerCase().includes("let’s move on to writing your hypothesis")) {
       researchState.currentStep = "4"; // Advance to the next main step
       researchState.step3SubStep = null; // Clear sub-step state
@@ -117,29 +121,45 @@ sendBtn.addEventListener("click", async () => {
 });
 
 // ===== GPT API Call =====
-async function chatWithGPT(step, userMessage) {
+// Now, userMessage parameter is removed because it's always included in researchState[step].chat
+async function chatWithGPT(step) {
   let messages = [
     { role: "system", content: getStepPrompt(step) }
   ];
 
-  // Add previous messages from the current step's chat history
+  // Append all existing chat history for the current step.
+  // This is where the user's current message (from sendBtn) will be.
   if (researchState[step] && researchState[step].chat) {
-    // Exclude the most recent user message as it's passed as 'userMessage' directly
     messages = messages.concat(researchState[step].chat);
+  } else {
+    // This else block should ideally not be hit if researchState is initialized correctly
+    console.error("Critical: Chat history not found for step", step);
+    // As a fallback, ensure at least the last user message from the DOM input
+    // (if it wasn't pushed to history) is sent. This is defensive coding.
+    // However, given the sendBtn logic, this shouldn't be necessary if `userInput.value`
+    // was correctly pushed.
+    if (userInput.value.trim()) {
+        messages.push({ role: "user", content: userInput.value.trim() });
+    }
   }
 
-  // Ensure the *actual* user message for the current turn is the last one sent
-  // This is crucial for the GPT to process the immediate user input.
-  // If the user's message is already added to researchState[step].chat before this function call,
-  // then it's already in the 'messages' array and this line is redundant/will duplicate.
-  // Given the 'sendBtn' logic above, it's added *before* this call, so we don't need to add it here again.
-  // It's part of messages = messages.concat(researchState[step].chat);
+  // --- VERY IMPORTANT DEBUGGING STEP ---
+  console.log(`Sending to GPT API for Step ${step}, SubStep ${researchState.step3SubStep || 'N/A'}:`);
+  messages.forEach((msg, index) => console.log(`[${index}] ${msg.role}: ${msg.content.substring(0, Math.min(200, msg.content.length))}${msg.content.length > 200 ? '...' : ''}`)); // Log first 200 chars
 
   const response = await fetch("/api/openai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages })
   });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("API Error (status:", response.status, "):", errorData);
+    // Attempt to read the full error message from the response
+    const errorMessage = errorData.error ? (errorData.error.message || JSON.stringify(errorData.error)) : response.statusText;
+    throw new Error(`GPT API error: ${errorMessage}`);
+  }
 
   const data = await response.json();
   return data.reply;
