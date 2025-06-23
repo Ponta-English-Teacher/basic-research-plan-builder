@@ -1,4 +1,4 @@
-// app.js - Corrected Version
+// app.js - Corrected Version with Focus on Step 1 & 2 state
 
 // ===== App State =====
 const researchState = {
@@ -25,6 +25,32 @@ const stepButtons = document.querySelectorAll(".step-btn");
 const summaryText = document.getElementById("summary-text");
 const outputContent = document.getElementById("output-content");
 const exportBtn = document.getElementById("export-btn");
+
+// ===== Helper for extracting data from GPT reply =====
+function extractFromReply(reply, step, subStep = null) {
+    if (step === "1") {
+        // For Step 1, the GPT confirms the topic. We want to extract just that.
+        // Look for the last user message or a clear confirmation from GPT.
+        // A simple approach for now: if GPT confirms, try to find a capitalized word as the topic,
+        // or just rely on the user's last input for now.
+        // BEST: GPT is prompted to say "Your topic is [X]"
+        const userMessage = researchState.step1.chat.findLast(msg => msg.role === 'user')?.content;
+        return userMessage || "N/A"; // Fallback to user's direct input
+    } else if (step === "2") {
+        // For Step 2, GPT suggests questions and then confirms.
+        // Example: "1. What are the most important factors for people when choosing a job? ... Great — we can use that as your research question!"
+        const match = reply.match(/1\. ([^\n]+)/); // Extract the first numbered suggestion
+        if (match && match[1]) {
+            return match[1].trim();
+        }
+        // Fallback: If no numbered question, assume the user's last input was the desired question
+        const userMessage = researchState.step2.chat.findLast(msg => msg.role === 'user')?.content;
+        return userMessage || "N/A";
+    }
+    // For Step 3, the storeResult logic handles it as before.
+    return reply; // Default: return full reply if not a special extraction step
+}
+
 
 // ===== Step Button Switching =====
 stepButtons.forEach(btn => {
@@ -66,7 +92,6 @@ sendBtn.addEventListener("click", async () => {
   userInput.value = ""; // Clear input field immediately
 
   // Store user message in current step's chat history
-  // This must happen *before* calling chatWithGPT so it's included in the history for the API call
   if (researchState.currentStep && researchState[researchState.currentStep]) {
     // Ensure chat array exists
     if (!researchState[researchState.currentStep].chat) {
@@ -75,7 +100,6 @@ sendBtn.addEventListener("click", async () => {
     researchState[researchState.currentStep].chat.push({ role: "user", content: userMessage });
   } else {
       console.warn(`Attempted to push user message but researchState for step ${researchState.currentStep} is not properly initialized.`);
-      // Defensive: If currentStep is somehow null or the object doesn't exist, handle it.
       return;
   }
 
@@ -88,7 +112,9 @@ sendBtn.addEventListener("click", async () => {
     researchState[researchState.currentStep].chat.push({ role: "gpt", content: reply });
   }
 
-  storeResult(researchState.currentStep, reply);
+  // Use the new extractFromReply helper for steps 1 and 2
+  const extractedContent = extractFromReply(reply, researchState.currentStep, researchState.step3SubStep);
+  storeResult(researchState.currentStep, extractedContent); // Pass extracted content to store
 
   // --- NEW LOGIC: Manage sub-steps within Step 3 ---
   if (researchState.currentStep === "3") {
@@ -140,25 +166,27 @@ sendBtn.addEventListener("click", async () => {
 });
 
 // ===== GPT API Call =====
-async function chatWithGPT(step, currentUserMessage) { // Renamed userMessage to currentUserMessage for clarity
+async function chatWithGPT(step, currentUserMessage) {
   let messages = [
     { role: "system", content: getStepPrompt(step) }
   ];
 
-  // Add previous messages from the current step's chat history.
-  // This array already includes the currentUserMessage, pushed in sendBtn.
-  // We need to iterate over it and add each message individually.
-  if (researchState[step] && researchState[step].chat) {
-    // Add all messages from the current step's chat history
-    // The last message in this history is the current user's input
-    researchState[step].chat.forEach(msg => {
-        messages.push(msg);
-    });
-  } else {
-    // Fallback: If chat history is somehow missing, ensure the current user message is at least sent.
-    console.warn(`Chat history for step ${step} is unexpectedly empty or undefined. Sending only current message.`);
-    messages.push({ role: "user", content: currentUserMessage });
+  // Get the chat history for the current step
+  let currentStepChatHistory = researchState[step] ? researchState[step].chat : [];
+
+  // Limit chat history to the last N messages to prevent excessive token usage
+  // This is crucial for avoiding context length errors.
+  const MAX_HISTORY_MESSAGES = 7; // Example: keep last 7 messages (user + assistant turns)
+  if (currentStepChatHistory.length > MAX_HISTORY_MESSAGES) {
+      // Slice from the end to get the most recent messages
+      currentStepChatHistory = currentStepChatHistory.slice(-MAX_HISTORY_MESSAGES);
   }
+
+  // Add the truncated chat history to the messages array.
+  // The currentUserMessage should be the last item in currentStepChatHistory
+  currentStepChatHistory.forEach(msg => {
+      messages.push(msg);
+  });
 
   // --- VERY IMPORTANT DEBUGGING STEP ---
   console.log(`Sending to GPT API for Step ${step}, SubStep ${researchState.step3SubStep || 'N/A'}. Full messages array:`);
@@ -209,8 +237,9 @@ function resetChat() {
 // ===== Step Prompts =====
 function getStepPrompt(step) {
   // Access researchState for context in prompts
-  const topic = researchState.step1.theme;
-  const researchQuestion = researchState.step2.question;
+  // Ensure these are concise. If they contain full GPT replies, it will break.
+  const topic = researchState.step1.theme || "Not yet defined";
+  const researchQuestion = researchState.step2.question || "Not yet defined";
 
   switch (step) {
     case "1": return `
@@ -370,14 +399,16 @@ function getUserFacingInstruction(step) {
 
 // ===== Store Step Output =====
 function storeResult(step, content) {
-  // Store the actual content of the output (GPT's reply)
-  outputContent.textContent = content;
+  // Store the actual content of the output (GPT's reply) in outputContent for UI display
+  outputContent.textContent = content; // This will show the extracted content for steps 1 and 2
 
   switch (step) {
     case "1":
+      // The content parameter now holds the *extracted* topic from extractFromReply
       researchState.step1.theme = content;
       break;
     case "2":
+      // The content parameter now holds the *extracted* question from extractFromReply
       researchState.step2.question = content;
       break;
     case "3":
@@ -386,6 +417,7 @@ function storeResult(step, content) {
       // in a format that can be easily extracted.
       // For profile and likert, assumes bullet points: '- Question text'
       // For multiple choice, assumes numbered questions: '1. Question\n\t1. Option'
+      // NOTE: Here, 'content' is the full GPT reply, because extractFromReply only works for steps 1 and 2
       if (researchState.step3SubStep === 'profile') {
         const lines = content.split("\n").filter(line => line.startsWith('- '));
         if (lines.length > 0) {
