@@ -145,3 +145,21 @@ document.addEventListener("DOMContentLoaded", () => {
   resetChat();
   appendMessage("gpt", getUserFacingInstruction("step1"));
 });
+// ===== OpenAI Proxy Call =====
+async function callChatGPT(messages) {
+  const response = await fetch("/api/openai", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ messages })
+  });
+
+  const data = await response.json();
+
+  if (!data || !data.reply) {
+    throw new Error("Invalid response from OpenAI");
+  }
+
+  return { content: data.reply };
+}
