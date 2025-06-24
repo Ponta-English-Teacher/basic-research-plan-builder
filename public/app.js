@@ -91,7 +91,19 @@ function getUserFacingInstruction(step) {
     case "step2":
       return "Let’s narrow it down. What do you want to know about this topic?";
     case "step3":
-      return "Here are 10 profile questions. Please choose 5–7 numbers (e.g., 1, 3, 5, 6, 8). I’ll also suggest some Likert and Yes/No questions.";
+  return `Here are 10 profile questions. Please choose 5–7 numbers (e.g., 1, 3, 5, 6, 8):
+1. How old are you?
+2. What is your gender?
+3. What year are you in university?
+4. Do you have any part-time jobs?
+5. How much free time do you have per week?
+6. How often do you use social media?
+7. How often do you eat with your family?
+8. Do you live with your family or alone?
+9. Do you have a regular hobby?
+10. How often do you study outside class?
+
+Then type the numbers to select. I’ll also suggest some Likert and Yes/No questions.`;
     case "step4":
       return "What do you expect to find? Let’s write one simple hypothesis based on your question.";
     case "step5":
