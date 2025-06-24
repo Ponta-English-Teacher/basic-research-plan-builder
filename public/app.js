@@ -3,7 +3,7 @@ const researchState = {
   currentStep: "step1",
   step1: { theme: "", chat: [] },
   step2: { question: "", chat: [] },
-  step3: { profileQuestions: [], likertQuestions: [] },
+  step3: { profileQuestions: [], likertQuestions: [], yesNoQuestions: [], chat: [] },
   step4: { hypothesis: "" },
   step5: { slidePlan: [] },
   step6: { exportSummary: "" }
@@ -18,6 +18,19 @@ const summaryText = document.getElementById("summary-text");
 const outputContent = document.getElementById("output-content");
 const exportBtn = document.getElementById("export-btn");
 
+const fixedProfileQuestions = [
+  "What is your age?",
+  "What grade are you in?",
+  "What is your gender?",
+  "How many hours do you study per week?",
+  "Do you have a part-time job?",
+  "How often do you use your smartphone?",
+  "What are your hobbies?",
+  "How do you usually commute to school?",
+  "How many people are in your household?",
+  "Do you participate in any school clubs?"
+];
+
 // ===== Step Button Switching =====
 stepButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -27,20 +40,10 @@ stepButtons.forEach((btn) => {
     resetChat();
     appendMessage("gpt", getUserFacingInstruction(stepKey));
 
+    // Show profile questions immediately in step3
     if (stepKey === "step3") {
-      const messages = [
-        { role: "system", content: getSystemPrompt("step3") },
-        { role: "user", content: "Please show me the 10 profile questions." }
-      ];
-      appendMessage("gpt", "Thinking...");
-      sendToOpenAI(messages)
-        .then((response) => {
-          replaceLastGPTMessage(response.content);
-          researchState[stepKey].chat.push({ role: "assistant", content: response.content });
-        })
-        .catch(() => {
-          replaceLastGPTMessage("Sorry, something went wrong.");
-        });
+      const numberedList = fixedProfileQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n");
+      appendMessage("gpt", `Here are 10 profile questions. Choose 5–7 by number:\n${numberedList}`);
     }
   });
 });
@@ -55,19 +58,43 @@ sendBtn.addEventListener("click", async () => {
   const step = researchState.currentStep;
   researchState[step].chat.push({ role: "user", content: input });
 
-  const systemPrompt = getSystemPrompt(step);
-  const messages = [
-    { role: "system", content: systemPrompt },
-    ...researchState[step].chat
-  ];
-
   appendMessage("gpt", "Thinking...");
+
   try {
-    const response = await sendToOpenAI(messages);
-    const reply = response.content;
-    replaceLastGPTMessage(reply);
-    researchState[step].chat.push({ role: "assistant", content: reply });
-    updateStateFromResponse(step, input, reply);
+    let reply = "";
+
+    if (step === "step3" && /^[0-9,\s]+$/.test(input)) {
+      const numbers = input.match(/\d+/g).map(Number).filter(n => n >= 1 && n <= 10);
+      const selected = [...new Set(numbers)].map(n => fixedProfileQuestions[n - 1]);
+      researchState.step3.profileQuestions = selected;
+      reply = `Great! You chose:\n- ${selected.join("\n- ")}`;
+      replaceLastGPTMessage(reply);
+
+      const topic = researchState.step1.theme;
+      const question = researchState.step2.question;
+      const systemPrompt = getSystemPrompt("step3");
+      const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `My topic is: ${topic}. My question is: ${question}` }
+      ];
+
+      const response = await sendToOpenAI(messages);
+      reply = response.content;
+      researchState.step3.chat.push({ role: "assistant", content: reply });
+      appendMessage("gpt", reply);
+    } else {
+      const systemPrompt = getSystemPrompt(step);
+      const messages = [
+        { role: "system", content: systemPrompt },
+        ...researchState[step].chat
+      ];
+
+      const response = await sendToOpenAI(messages);
+      reply = response.content;
+      replaceLastGPTMessage(reply);
+      researchState[step].chat.push({ role: "assistant", content: reply });
+      updateStateFromResponse(step, input, reply);
+    }
   } catch (err) {
     replaceLastGPTMessage("Sorry, something went wrong.");
   }
@@ -114,15 +141,15 @@ function getUserFacingInstruction(step) {
 function getSystemPrompt(step) {
   switch (step) {
     case "step1":
-      return "You are helping a student choose a broad topic for a basic research project. Accept vague ideas like 'money' or 'family'. Just help them pick a general theme.";
+      return "You are helping a student choose a broad topic for a basic research project. Accept vague ideas like 'money' or 'family'.";
     case "step2":
-      return "You are helping a student focus their theme into a specific, surveyable research question. Accept their vague topic and help them take one step deeper. Offer encouraging ideas and end with 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
+      return "You are helping a student focus their theme into a specific, surveyable research question. Offer encouragement and end with 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
     case "step3":
-      return "Give the student 10 fixed profile (demographic) questions such as age, grade, hobbies, etc. These are general questions that do NOT depend on the topic. List them clearly. Do not wait for user input.";
+      return "Based on the student’s topic and question, suggest 3–5 Likert scale questions and 2–3 Yes/No questions. Keep it simple and related to their research question.";
     case "step4":
-      return "Help the student write a simple hypothesis based on their survey question. Ask what they expect and suggest one simple sentence.";
+      return "Help the student write a simple hypothesis based on their question. Ask what they expect and suggest one sentence.";
     case "step5":
-      return "Create a slide plan (5–6 slides) for a short student presentation. Each slide should have a short title and 2–3 bullet points. Keep it simple, suitable for use in Felo or Gamma.";
+      return "Create a slide plan (5–6 slides) for a student presentation. Each slide should have a title and 2–3 bullet points.";
     case "step6":
       return "Summarize the entire research plan clearly and concisely for the student to copy and submit.";
     default:
@@ -135,8 +162,6 @@ function updateStateFromResponse(step, userInput, gptReply) {
     researchState.step1.theme = userInput;
   } else if (step === "step2") {
     researchState.step2.question = userInput;
-  } else if (step === "step3") {
-    researchState.step3.profileQuestions = gptReply;
   } else if (step === "step4") {
     researchState.step4.hypothesis = userInput;
   } else if (step === "step5") {
@@ -166,17 +191,14 @@ exportBtn.addEventListener("click", () => {
   });
 });
 
-// ===== API Call to OpenAI (Backend Proxy or Local Server) =====
+// ===== API Call to OpenAI =====
 async function sendToOpenAI(messages) {
   const response = await fetch("/api/openai", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: messages
-    })
+    body: JSON.stringify({ model: "gpt-4o", messages })
   });
 
   if (!response.ok) {
@@ -188,7 +210,7 @@ async function sendToOpenAI(messages) {
   return data.choices[0].message;
 }
 
-// ===== Initial GPT Message on Load =====
+// ===== Initial Message on Load =====
 window.addEventListener("DOMContentLoaded", () => {
   const firstStepKey = "step1";
   researchState.currentStep = firstStepKey;
