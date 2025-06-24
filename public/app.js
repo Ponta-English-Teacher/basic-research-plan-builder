@@ -3,10 +3,10 @@ const researchState = {
   currentStep: "step1",
   step1: { theme: "", chat: [] },
   step2: { question: "", chat: [] },
-  step3: { profileQuestions: [], likertQuestions: [], yesNoQuestions: [], chat: [] },
-  step4: { hypothesis: "" },
-  step5: { slidePlan: [] },
-  step6: { exportSummary: "" }
+  step3: { profileQuestions: [], likertQuestions: [], chat: [] },
+  step4: { hypothesis: "", chat: [] },
+  step5: { slidePlan: [], chat: [] },
+  step6: { exportSummary: "", chat: [] }
 };
 
 // ===== DOM Elements =====
@@ -18,19 +18,6 @@ const summaryText = document.getElementById("summary-text");
 const outputContent = document.getElementById("output-content");
 const exportBtn = document.getElementById("export-btn");
 
-const fixedProfileQuestions = [
-  "What is your age?",
-  "What grade are you in?",
-  "What is your gender?",
-  "How many hours do you study per week?",
-  "Do you have a part-time job?",
-  "How often do you use your smartphone?",
-  "What are your hobbies?",
-  "How do you usually commute to school?",
-  "How many people are in your household?",
-  "Do you participate in any school clubs?"
-];
-
 // ===== Step Button Switching =====
 stepButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -39,12 +26,6 @@ stepButtons.forEach((btn) => {
     researchState.currentStep = stepKey;
     resetChat();
     appendMessage("gpt", getUserFacingInstruction(stepKey));
-
-    // Show profile questions immediately in step3
-    if (stepKey === "step3") {
-      const numberedList = fixedProfileQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n");
-      appendMessage("gpt", `Here are 10 profile questions. Choose 5–7 by number:\n${numberedList}`);
-    }
   });
 });
 
@@ -58,42 +39,26 @@ sendBtn.addEventListener("click", async () => {
   const step = researchState.currentStep;
   researchState[step].chat.push({ role: "user", content: input });
 
+  const systemPrompt = getSystemPrompt(step);
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...researchState[step].chat
+  ];
+
   appendMessage("gpt", "Thinking...");
-
   try {
-    let reply = "";
+    const response = await sendToOpenAI(messages);
+    const reply = response.content;
+    replaceLastGPTMessage(reply);
+    researchState[step].chat.push({ role: "assistant", content: reply });
 
-    if (step === "step3" && /^[0-9,\s]+$/.test(input)) {
-      const numbers = input.match(/\d+/g).map(Number).filter(n => n >= 1 && n <= 10);
-      const selected = [...new Set(numbers)].map(n => fixedProfileQuestions[n - 1]);
-      researchState.step3.profileQuestions = selected;
-      reply = `Great! You chose:\n- ${selected.join("\n- ")}`;
-      replaceLastGPTMessage(reply);
-
-      const topic = researchState.step1.theme;
-      const question = researchState.step2.question;
-      const systemPrompt = getSystemPrompt("step3");
-      const messages = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `My topic is: ${topic}. My question is: ${question}` }
-      ];
-
-      const response = await sendToOpenAI(messages);
-      reply = response.content;
-      researchState.step3.chat.push({ role: "assistant", content: reply });
-      appendMessage("gpt", reply);
-    } else {
-      const systemPrompt = getSystemPrompt(step);
-      const messages = [
-        { role: "system", content: systemPrompt },
-        ...researchState[step].chat
-      ];
-
-      const response = await sendToOpenAI(messages);
-      reply = response.content;
-      replaceLastGPTMessage(reply);
-      researchState[step].chat.push({ role: "assistant", content: reply });
-      updateStateFromResponse(step, input, reply);
+    if (step === "step1") researchState.step1.theme = input;
+    if (step === "step2") researchState.step2.question = input;
+    if (step === "step4") researchState.step4.hypothesis = input;
+    if (step === "step5") researchState.step5.slidePlan = reply;
+    if (step === "step6") {
+      researchState.step6.exportSummary = reply;
+      summaryText.textContent = reply;
     }
   } catch (err) {
     replaceLastGPTMessage("Sorry, something went wrong.");
@@ -126,13 +91,13 @@ function getUserFacingInstruction(step) {
     case "step2":
       return "Let’s narrow it down. What do you want to know about this topic?";
     case "step3":
-      return "Now let’s build your questionnaire. Would you like some examples?";
+      return "Here are 10 profile questions. Please choose 5–7 numbers (e.g., 1, 3, 5, 6, 8). I’ll also suggest some Likert and Yes/No questions.";
     case "step4":
-      return "Let’s write a simple hypothesis. What do you expect based on your question?";
+      return "What do you expect to find? Let’s write one simple hypothesis based on your question.";
     case "step5":
-      return "Let’s create a slide plan. How would you present your research in 5–6 slides?";
+      return "Let’s create your slide plan. How would you present your research in 5–6 slides?";
     case "step6":
-      return "Here is your summary. You can copy it below.";
+      return "Here is your full summary. You can copy or download it.";
     default:
       return "Let’s get started.";
   }
@@ -141,34 +106,31 @@ function getUserFacingInstruction(step) {
 function getSystemPrompt(step) {
   switch (step) {
     case "step1":
-      return "You are helping a student choose a broad topic for a basic research project. Accept vague ideas like 'money' or 'family'.";
+      return "You are helping a student choose a broad research theme. Accept vague answers like 'money' or 'family' and do not go deeper. Just respond positively.";
     case "step2":
-      return "You are helping a student focus their theme into a specific, surveyable research question. Offer encouragement and end with 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
+      return "You are helping the student turn their broad theme into a focused and surveyable question. Accept vague subtopics and help them specify one aspect. End with: 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
     case "step3":
-      return "Based on the student’s topic and question, suggest 3–5 Likert scale questions and 2–3 Yes/No questions. Keep it simple and related to their research question.";
-    case "step4":
-      return "Help the student write a simple hypothesis based on their question. Ask what they expect and suggest one sentence.";
-    case "step5":
-      return "Create a slide plan (5–6 slides) for a student presentation. Each slide should have a title and 2–3 bullet points.";
-    case "step6":
-      return "Summarize the entire research plan clearly and concisely for the student to copy and submit.";
-    default:
-      return "Act as a helpful research guide.";
-  }
-}
+      return `You are helping the student build a questionnaire. First, give them this fixed list of 10 profile questions:
+1. How old are you?
+2. What is your gender?
+3. What year are you in university?
+4. Do you have any part-time jobs?
+5. How much free time do you have per week?
+6. How often do you use social media?
+7. How often do you eat with your family?
+8. Do you live with your family or alone?
+9. Do you have a regular hobby?
+10. How often do you study outside class?
 
-function updateStateFromResponse(step, userInput, gptReply) {
-  if (step === "step1") {
-    researchState.step1.theme = userInput;
-  } else if (step === "step2") {
-    researchState.step2.question = userInput;
-  } else if (step === "step4") {
-    researchState.step4.hypothesis = userInput;
-  } else if (step === "step5") {
-    researchState.step5.slidePlan = gptReply;
-  } else if (step === "step6") {
-    researchState.step6.exportSummary = gptReply;
-    summaryText.textContent = gptReply;
+Then, based on their research question, suggest 3–5 Likert scale questions and 2–3 yes/no questions. Keep them simple and beginner-friendly.`;
+    case "step4":
+      return "Help the student write one short, clear hypothesis based on their research question. Offer examples if needed.";
+    case "step5":
+      return "Help the student create a slide plan (5–6 slides) for their presentation. Each slide should have a short title and 2–3 bullet points.";
+    case "step6":
+      return "Summarize the entire research plan including theme, question, questionnaire highlights, hypothesis, and slide structure.";
+    default:
+      return "Act as a kind teacher helping a student with a research project.";
   }
 }
 
@@ -207,10 +169,10 @@ async function sendToOpenAI(messages) {
   }
 
   const data = await response.json();
-  return data.choices[0].message;
+  return { content: data.reply };
 }
 
-// ===== Initial Message on Load =====
+// ===== Initial GPT Message on Load =====
 window.addEventListener("DOMContentLoaded", () => {
   const firstStepKey = "step1";
   researchState.currentStep = firstStepKey;
