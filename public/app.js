@@ -108,7 +108,7 @@ function getSystemPrompt(step) {
     case "step1":
       return "You are helping a student choose a broad research theme. Accept vague answers like 'money' or 'family' and do not go deeper. Just respond positively.";
     case "step2":
-      return "You are helping the student turn their broad theme into a focused and surveyable question. Accept vague subtopics and help them specify one aspect. End with: 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
+      return "You are helping the student turn their broad theme into a focused and surveyable question. Do not ask follow-up questions. Accept a simple, student-level research question like 'How do students spend money?' or 'Why do people save money?'. Do not push them to specify demographics or location. After accepting their idea, say: 'Great — we can use that as your research question! Let’s move on to building your questionnaire.' Be warm, kind, and move forward smoothly.";
     case "step3":
       return `You are helping the student build a questionnaire. First, give them this fixed list of 10 profile questions:
 1. How old are you?
@@ -160,7 +160,7 @@ async function sendToOpenAI(messages) {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ model: "gpt-4o", messages })
+    body: JSON.stringify({ messages })
   });
 
   if (!response.ok) {
@@ -169,7 +169,7 @@ async function sendToOpenAI(messages) {
   }
 
   const data = await response.json();
-  return { content: data.reply };
+  return { content: data.choices[0].message.content };
 }
 
 // ===== Initial GPT Message on Load =====
