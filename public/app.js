@@ -3,9 +3,9 @@ const researchState = {
   currentStep: "step1",
   step1: { theme: "", chat: [] },
   step2: { question: "", chat: [] },
-  step3: { profileQuestions: [], likertQuestions: [], chat: [] },
-  step4: { hypothesis: "", chat: [] },
-  step5: { slidePlan: [], chat: [] },
+  step3: { profileQuestions: [], likertQuestions: [] },
+  step4: { hypothesis: "" },
+  step5: { slidePlan: [] },
   step6: { exportSummary: "" }
 };
 
@@ -22,9 +22,9 @@ const exportBtn = document.getElementById("export-btn");
 stepButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const step = btn.dataset.step;
-    researchState.currentStep = "step" + step;
+    researchState.currentStep = `step${step}`;
     resetChat();
-    appendMessage("gpt", getUserFacingInstruction("step" + step));
+    appendMessage("gpt", getUserFacingInstruction(`step${step}`));
   });
 });
 
@@ -32,121 +32,119 @@ stepButtons.forEach(btn => {
 sendBtn.addEventListener("click", async () => {
   const input = userInput.value.trim();
   if (!input) return;
+
   appendMessage("user", input);
   userInput.value = "";
 
-  const messages = buildMessages(input);
+  const currentStep = researchState.currentStep;
+  const chatHistory = researchState[currentStep].chat;
+  chatHistory.push({ role: "user", content: input });
 
-  try {
-    appendMessage("gpt", "🧠 Thinking...");
-    const result = await callChatGPT(messages);
-    document.querySelector(".message.gpt:last-child").remove();
-    appendMessage("gpt", result.content);
+  const messages = [
+    { role: "system", content: getSystemPrompt(currentStep) },
+    ...chatHistory
+  ];
 
-    saveToState(result.content);
-    updateSummary();
-  } catch (err) {
-    document.querySelector(".message.gpt:last-child").remove();
-    appendMessage("gpt", "❌ Failed to get a response. Please try again.");
-  }
+  appendMessage("gpt", "⏳ Thinking...");
+  const reply = await callChatGPT(messages);
+  chatHistory.push({ role: "assistant", content: reply.content });
+  updateLastBotMessage(reply.content);
+
+  saveDataToState(currentStep, input, reply.content);
+  updateSummary();
 });
 
-// ===== Initial Chat Load =====
-document.addEventListener("DOMContentLoaded", () => {
-  resetChat();
-  appendMessage("gpt", getUserFacingInstruction("step1"));
-});
-
-// ===== Chat Helpers =====
-function appendMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = `message ${role}`;
-  div.innerText = text;
-  chatLog.appendChild(div);
+// ===== Chat Handling =====
+function appendMessage(role, content) {
+  const msg = document.createElement("div");
+  msg.className = `message ${role}`;
+  msg.innerText = content;
+  chatLog.appendChild(msg);
   chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function updateLastBotMessage(content) {
+  const botMessages = [...chatLog.getElementsByClassName("message gpt")];
+  if (botMessages.length > 0) {
+    botMessages[botMessages.length - 1].innerText = content;
+  }
 }
 
 function resetChat() {
   chatLog.innerHTML = "";
-}
-
-function buildMessages(latestUserInput) {
-  const currentStep = researchState.currentStep;
-  const messages = [];
-
-  const previousChat = researchState[currentStep].chat || [];
-  previousChat.forEach(msg => messages.push(msg));
-
-  const newMsg = { role: "user", content: latestUserInput };
-  messages.push(newMsg);
-
-  return messages;
-}
-
-function saveToState(gptReply) {
-  const step = researchState.currentStep;
-  const chat = researchState[step].chat || [];
-  chat.push({ role: "gpt", content: gptReply });
-  researchState[step].chat = chat;
-
-  if (step === "step1") researchState.step1.theme = userInput.value.trim();
-  if (step === "step2") researchState.step2.question = userInput.value.trim();
-  if (step === "step3") {
-    // Expecting both profile and Likert questions to be mentioned in GPT output
-    researchState.step3.profileQuestions.push("..."); // (dummy placeholder)
-    researchState.step3.likertQuestions.push("..."); // (dummy placeholder)
-  }
-  if (step === "step4") researchState.step4.hypothesis = userInput.value.trim();
-  if (step === "step5") researchState.step5.slidePlan.push(userInput.value.trim());
-  if (step === "step6") researchState.step6.exportSummary = generateExportText();
+  userInput.value = "";
 }
 
 function updateSummary() {
-  summaryText.textContent = generateExportText();
-}
-
-function generateExportText() {
-  return `Theme: ${researchState.step1.theme}
+  summaryText.innerText = `
+Theme: ${researchState.step1.theme}
 Research Question: ${researchState.step2.question}
 Profile Questions: ${researchState.step3.profileQuestions.join("; ")}
 Likert Questions: ${researchState.step3.likertQuestions.join("; ")}
 Hypothesis: ${researchState.step4.hypothesis}
-Slides: ${researchState.step5.slidePlan.join("; ")}`;
+Slide Plan: ${researchState.step5.slidePlan.join(" | ")}
+`;
+}
+
+// ===== Save State Info Per Step =====
+function saveDataToState(step, userInput, botReply) {
+  if (step === "step1") {
+    researchState.step1.theme = userInput;
+  } else if (step === "step2") {
+    researchState.step2.question = userInput;
+  } else if (step === "step3") {
+    // Extract profile and Likert questions from the reply
+    const profiles = botReply.match(/\[Profile\](.*?)\n/gs);
+    const likerts = botReply.match(/\[Likert\](.*?)\n/gs);
+    researchState.step3.profileQuestions = profiles || [];
+    researchState.step3.likertQuestions = likerts || [];
+  } else if (step === "step4") {
+    researchState.step4.hypothesis = botReply;
+  } else if (step === "step5") {
+    researchState.step5.slidePlan = botReply.split(/\n(?=Slide \d+:)/);
+  }
+}
+
+// ===== System Prompts by Step =====
+function getSystemPrompt(step) {
+  switch (step) {
+    case "step1":
+      return "You're helping a student choose a research theme for a basic survey. Respond like a kind teacher.";
+    case "step2":
+      return `You're helping students narrow down their research question based on their theme: "${researchState.step1.theme}".`;
+    case "step3":
+      return `Remind them their topic is: ${researchState.step1.theme}, and question is: ${researchState.step2.question}. Then help them select 5 profile questions from a list, and generate Likert-style questions related to their research.`;
+    case "step4":
+      return `Help generate hypotheses based on their question: ${researchState.step2.question}`;
+    case "step5":
+      return `Generate a simple 5-7 slide research plan presentation based on their topic, question, and hypothesis.`;
+    case "step6":
+      return "Summarize all steps of the research plan. Format clearly.";
+    default:
+      return "You're a helpful assistant for building a student research plan.";
+  }
 }
 
 function getUserFacingInstruction(step) {
   switch (step) {
     case "step1":
-      return "What topic are you interested in? (e.g., family, money, sleep, phones)";
+      return "Let's begin! What general topic are you interested in (e.g., food, family, phone use)?";
     case "step2":
-      return "What do you want to know about that topic? Please write your research question.";
+      return "What exactly do you want to find out about your topic? Please write your research question.";
     case "step3":
-      const topic = researchState.step1.theme || "your topic";
-      const question = researchState.step2.question || "your research question";
-      return `Thanks for your question: "${question}". Now, let’s choose some profile questions (age, gender…) and Likert questions (e.g., \"How often do you...\") based on your topic \"${topic}\".`;
+      return `Let's choose 5 profile questions from a fixed list (e.g., Gender, Living Alone, Club Activity) and create Likert-style questions related to your research question.`;
     case "step4":
-      return "Now write a simple hypothesis that matches your research question.";
+      return "Now, based on your topic and Likert questions, what do you think will happen? Let's create a hypothesis.";
     case "step5":
-      return "Let’s make a slide plan. What should go on Slide 1?";
+      return "Let’s plan your research presentation. I’ll help generate 5–7 slides with narration based on your work so far.";
     case "step6":
-      return "Here is your final summary. You can download it below.";
+      return "Here is your full research plan summary. You can review and download it.";
     default:
-      return "What do you want to do next?";
+      return "Let's continue building your research plan.";
   }
 }
 
-// ===== Export =====
-exportBtn.addEventListener("click", () => {
-  const blob = new Blob([generateExportText()], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Research_Plan_Summary.txt";
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-// ===== API Call =====
+// ===== Call ChatGPT API =====
 async function callChatGPT(messages) {
   const response = await fetch("/api/openai", {
     method: "POST",
@@ -155,7 +153,15 @@ async function callChatGPT(messages) {
   });
 
   const data = await response.json();
-
   if (!data || !data.reply) throw new Error("Invalid response from OpenAI");
   return { content: data.reply };
 }
+
+// ===== Export Summary =====
+exportBtn.addEventListener("click", () => {
+  const blob = new Blob([summaryText.innerText], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "Research_Plan_Summary.txt";
+  link.click();
+});
