@@ -22,6 +22,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "No reply from OpenAI" });
     }
 
+    // ✅ Return in expected format
     return res.status(200).json({ reply: content });
 
   } catch (error) {
