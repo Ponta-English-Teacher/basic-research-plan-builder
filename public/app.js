@@ -26,6 +26,22 @@ stepButtons.forEach((btn) => {
     researchState.currentStep = stepKey;
     resetChat();
     appendMessage("gpt", getUserFacingInstruction(stepKey));
+
+    if (stepKey === "step3") {
+      const messages = [
+        { role: "system", content: getSystemPrompt("step3") },
+        { role: "user", content: "Please show me the 10 profile questions." }
+      ];
+      appendMessage("gpt", "Thinking...");
+      sendToOpenAI(messages)
+        .then((response) => {
+          replaceLastGPTMessage(response.content);
+          researchState[stepKey].chat.push({ role: "assistant", content: response.content });
+        })
+        .catch(() => {
+          replaceLastGPTMessage("Sorry, something went wrong.");
+        });
+    }
   });
 });
 
@@ -83,9 +99,9 @@ function getUserFacingInstruction(step) {
     case "step2":
       return "Let’s narrow it down. What do you want to know about this topic?";
     case "step3":
-      return "Let’s start by selecting some basic profile questions. Would you like to see some examples?";
+      return "Now let’s build your questionnaire. Would you like some examples?";
     case "step4":
-      return "Let’s write a simple hypothesis. Think about what you expect based on your question.";
+      return "Let’s write a simple hypothesis. What do you expect based on your question?";
     case "step5":
       return "Let’s create a slide plan. How would you present your research in 5–6 slides?";
     case "step6":
@@ -98,15 +114,15 @@ function getUserFacingInstruction(step) {
 function getSystemPrompt(step) {
   switch (step) {
     case "step1":
-      return "You are helping a student choose a simple, broad theme for a research project. Accept vague answers like 'money' or 'family'. Do NOT break it into subtopics or give academic suggestions. Just encourage the student and confirm their chosen topic. Keep it short and simple, like a kind teacher.";
+      return "You are helping a student choose a broad topic for a basic research project. Accept vague ideas like 'money' or 'family'. Just help them pick a general theme.";
     case "step2":
       return "You are helping a student focus their theme into a specific, surveyable research question. Accept their vague topic and help them take one step deeper. Offer encouraging ideas and end with 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
     case "step3":
-      return "You are helping a student build a questionnaire. For now, give only general profile questions. List exactly 10 simple items such as age, year, part-time job, club activities, daily routine, etc. Do not explain anything. Do not include Likert or Yes/No questions. Just return the list clearly so the student can choose 5–7 of them.";
+      return "Give the student 10 fixed profile (demographic) questions such as age, grade, hobbies, etc. These are general questions that do NOT depend on the topic. List them clearly. Do not wait for user input.";
     case "step4":
-      return "Ask the student 2–3 simple questions to help them think about what they expect from the survey results. Do NOT write the hypothesis yourself. Just help them think. The student will write their own hypothesis.";
+      return "Help the student write a simple hypothesis based on their survey question. Ask what they expect and suggest one simple sentence.";
     case "step5":
-      return "Create a 5–6 slide presentation plan based on the student's research project. For each slide, write a short title and 2–3 simple bullet points. Do NOT explain or describe the slides. Do NOT include narration or text for speaking. Just output the slide ideas clearly.";
+      return "Create a slide plan (5–6 slides) for a short student presentation. Each slide should have a short title and 2–3 bullet points. Keep it simple, suitable for use in Felo or Gamma.";
     case "step6":
       return "Summarize the entire research plan clearly and concisely for the student to copy and submit.";
     default:
@@ -120,7 +136,7 @@ function updateStateFromResponse(step, userInput, gptReply) {
   } else if (step === "step2") {
     researchState.step2.question = userInput;
   } else if (step === "step3") {
-    // Just storing suggestion responses; user edits manually
+    researchState.step3.profileQuestions = gptReply;
   } else if (step === "step4") {
     researchState.step4.hypothesis = userInput;
   } else if (step === "step5") {
