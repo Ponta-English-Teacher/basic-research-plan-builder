@@ -171,3 +171,10 @@ async function sendToOpenAI(messages) {
   const data = await response.json();
   return data.choices[0].message;
 }
+
+// ===== Initial GPT Message on Load =====
+window.addEventListener("DOMContentLoaded", () => {
+  const firstStepKey = "step1";
+  researchState.currentStep = firstStepKey;
+  appendMessage("gpt", getUserFacingInstruction(firstStepKey));
+});
