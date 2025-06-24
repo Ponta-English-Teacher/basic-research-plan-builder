@@ -3,9 +3,9 @@ const researchState = {
   currentStep: null,
   step1: { theme: "", chat: [] },
   step2: { question: "", chat: [] },
-  step3: { profileQuestions: [], surveyQuestions: [], chat: [] },
-  step4: { hypothesis: "" },
-  step5: { slidePlan: [] },
+  step3: { profileQuestions: [], likertQuestions: [], chat: [] },
+  step4: { hypothesis: "", chat: [] },
+  step5: { slidePlan: [], chat: [] },
   step6: { exportSummary: "" }
 };
 
@@ -15,7 +15,6 @@ const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 const stepButtons = document.querySelectorAll(".step-btn");
 const summaryText = document.getElementById("summary-text");
-const outputContent = document.getElementById("output-content");
 const exportBtn = document.getElementById("export-btn");
 
 // ===== Step Button Switching =====
@@ -24,187 +23,104 @@ stepButtons.forEach(btn => {
     const step = btn.dataset.step;
     researchState.currentStep = step;
     resetChat();
-    const intro = getStepPrompt(step);
-    appendMessage("gpt", intro);
+    appendMessage("gpt", getUserFacingInstruction(step));
   });
 });
 
 // ===== Send Button Behavior =====
 sendBtn.addEventListener("click", async () => {
-  const userMessage = userInput.value.trim();
-  if (!userMessage) return;
+  const input = userInput.value.trim();
+  if (!input) return;
 
-  appendMessage("user", userMessage);
+  appendMessage("user", input);
   userInput.value = "";
 
-  const reply = await chatWithGPT(researchState.currentStep, userMessage);
-  appendMessage("gpt", reply);
-  storeResult(researchState.currentStep, userMessage, reply);
-  updateSummary();
-});
-
-// ===== ChatGPT API Integration =====
-async function chatWithGPT(step, userMessage) {
-  const systemPrompt = getSystemPrompt(step);
+  const systemPrompt = getSystemPrompt(researchState.currentStep);
   const messages = [
     { role: "system", content: systemPrompt },
-    { role: "user", content: userMessage }
+    ...getCurrentStepChat(),
+    { role: "user", content: input }
   ];
 
-  try {
-    const res = await fetch("/api/openai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages })
-    });
+  appendMessage("gpt", "Thinking...");
 
-    const data = await res.json();
-    return data.reply || "(No reply)";
-  } catch (e) {
-    return "(Error calling GPT)";
+  try {
+    const reply = await chatWithGPT(messages);
+    updateChatState(input, reply);
+    updateResearchState(researchState.currentStep, input, reply);
+    updateLastGptMessage(reply);
+  } catch (err) {
+    updateLastGptMessage("⚠️ Error. Please try again.");
+    console.error(err);
   }
+});
+
+// ===== Utility Functions =====
+function resetChat() {
+  chatLog.innerHTML = "";
 }
 
-// ===== Message Display =====
-function appendMessage(sender, message) {
-  const div = document.createElement("div");
-  div.className = sender === "user" ? "user-msg" : "gpt-msg";
-  div.textContent = message;
-  chatLog.appendChild(div);
+function appendMessage(sender, text) {
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${sender}`;
+  bubble.innerText = text;
+  chatLog.appendChild(bubble);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function resetChat() {
-  chatLog.innerHTML = "";
-  outputContent.textContent = "Your result will appear here.";
-  userInput.value = "";
+function updateLastGptMessage(text) {
+  const bubbles = document.querySelectorAll(".bubble.gpt");
+  if (bubbles.length > 0) {
+    bubbles[bubbles.length - 1].innerText = text;
+  }
 }
 
-// ===== Step Instructions for GPT Role =====
+function getCurrentStepChat() {
+  return researchState[`step${researchState.currentStep}`]?.chat || [];
+}
+
+function updateChatState(userMsg, gptMsg) {
+  const stepChat = getCurrentStepChat();
+  stepChat.push({ role: "user", content: userMsg });
+  stepChat.push({ role: "assistant", content: gptMsg });
+}
+
+function updateResearchState(step, userMsg, gptMsg) {
+  if (step === "1") researchState.step1.theme = userMsg;
+  else if (step === "2") researchState.step2.question = userMsg;
+  else if (step === "4") researchState.step4.hypothesis = userMsg;
+  else if (step === "5") researchState.step5.slidePlan.push(userMsg);
+  else if (step === "6") researchState.step6.exportSummary = gptMsg;
+}
+
+// ===== Prompts =====
+function getUserFacingInstruction(step) {
+  switch (step) {
+    case "1": return "What topic are you interested in? (e.g., money, time, jobs, family, future)";
+    case "2": return "Let’s make your research question. What do you want to know about your topic?";
+    case "3": return "Let’s think about your survey. What background info and questions will help you learn something useful?";
+    case "4": return "What result do you expect? Try to make a simple hypothesis.";
+    case "5": return "Let’s create your slide plan. What title or message do you want to show on each slide?";
+    case "6": return "Ready to export your research plan summary? Type anything and I’ll generate it!";
+    default: return "Let’s get started!";
+  }
+}
+
 function getSystemPrompt(step) {
   switch (step) {
     case "1":
-      return "You are helping a student choose a research topic. Accept any topic that sounds measurable (e.g., job, money, family) and respond positively. Do not over-analyze.";
-
+      return `You're helping a student choose a survey topic. Accept broad themes like “money” or “family,” but guide them to something slightly more specific if they stay vague. Examples: “future family,” “part-time job experience.” Once it’s good enough, say “Let’s move on to your research question →”`;
     case "2":
-      return `
-You are helping a student write a clear and simple research question based on their topic.
-
-🎯 Your job is to guide — not redirect or over-analyze.
-
-🧠 Accept ideas that are specific enough to build a survey from.  
-Examples of good-enough topics:
-- “Ideal family” (✅ okay)  
-- “Family” alone (❌ too vague — ask what part of family they are interested in)
-
-✅ If their answer is already at the right level (like “ideal family,” “family spending,” or “phone use at night”), accept it.  
-❌ If the answer is too vague (like “money,” “jobs,” or “family”), ask **one friendly follow-up** to guide them to a focus.
-
-🚫 Do NOT bring up academic topics like demography, policy, or sociology unless the student says so first.
-
-📘 Examples of good research questions:
-- “What kind of family do people want to have in the future?”
-- “What do students think is most important when choosing a job?”
-- “How much time do students spend on their phones after midnight?”
-
-✅ When you believe the question is ready:
-- Confirm it positively
-- BUT wait — do **not** immediately move on
-- If the student adds more ideas or refinements, **absorb them**
-- Only say:
-  “Great — let’s move on to your questionnaire →”
-  👉 if the student seems finished **or presses the Questionnaire (Step 3) button**
-
-💬 Keep your tone warm, natural, and supportive — like a friendly teacher.
-`;
-
+      return `Now you're helping define the research question. Explain that it's “what you want to know by doing this research.” Use simple follow-up questions to understand their focus, and avoid pushing too specific or too academic (e.g., demography). When a good question emerges, say “Great — let’s move on to your questionnaire →”`;
     case "3":
-      return "Help the student think about what to ask in their survey. First ask what personal info might matter (e.g., gender, age). Then offer 5–6 main survey questions based on their ideas. Present questions in Google Form style.";
-
+      return `Help the student brainstorm their questionnaire. First suggest some profile info they may want to collect. Then ask what questions will help them learn what they want to know. If helpful, offer examples and say “If you like these, I can format them for Google Form style.”`;
     case "4":
-      return "Ask what kind of result the student expects. Keep it simple and light. Help them express a clear, informal guess as a hypothesis.";
-
+      return `Ask what kind of results they expect. What do they think most people will say? Their answer can be used to write a hypothesis. Keep it simple and student-friendly.`;
     case "5":
-      return "Create a 4–5 slide plan for a Felo presentation. Each slide should include a title, keywords, and a short narration explaining the research.";
-
+      return `Guide the student to create a basic slide plan for presenting their research. Ask what to show on Slide 1 (e.g., title and topic), Slide 2 (question), Slide 3 (survey), etc. Limit it to 4–6 slides.`;
+    case "6":
+      return `Take all prior input and produce a Research Plan Summary. Include: topic, research question, profile items, sample survey questions, hypothesis, and slide plan. Format clearly.`;
     default:
-      return "Guide the student with friendly and helpful tone.";
+      return "You are a research advisor guiding a student through a step-by-step plan.";
   }
 }
-
-// ===== Instruction for Student UI (top message) =====
-function getStepPrompt(step) {
-  switch (step) {
-    case "1":
-      return "What topic are you interested in? (e.g., money, job, family, happiness, traveling, hobbies)";
-    case "2":
-      return "Let’s make your research question. What do you want to know about your topic?";
-    case "3":
-      return "Let’s think about your survey. What background info and questions will help you learn something useful?";
-    case "4":
-      return "What do you think your classmates will say? Let’s write your hypothesis.";
-    case "5":
-      return "Let’s plan your presentation slides. We’ll write titles, keywords, and narrations.";
-    default:
-      return "Let’s get started!";
-  }
-}
-
-// ===== Save Results Per Step =====
-function storeResult(step, userInput, reply) {
-  switch (step) {
-    case "1":
-      researchState.step1.theme = userInput;
-      break;
-    case "2":
-      researchState.step2.question = reply;
-      break;
-    case "3":
-      if (reply.includes("Q1") || reply.includes("1.")) {
-        const lines = reply.split("\n").filter(l => l.trim().startsWith("Q"));
-        researchState.step3.surveyQuestions = lines;
-      } else {
-        researchState.step3.profileQuestions.push(userInput);
-      }
-      break;
-    case "4":
-      researchState.step4.hypothesis = reply;
-      break;
-    case "5":
-      const slides = reply.split("\n\n").filter(s => s.includes("Slide"));
-      researchState.step5.slidePlan = slides;
-      break;
-  }
-  outputContent.textContent = reply;
-}
-
-// ===== Summary Display =====
-function updateSummary() {
-  summaryText.textContent = `
-📝 Research Plan Summary
-
-📌 Topic: ${researchState.step1.theme}
-❓ Research Question: ${researchState.step2.question}
-
-👤 Profile Ideas: ${researchState.step3.profileQuestions.join(", ")}
-📋 Survey Questions:
-${researchState.step3.surveyQuestions.join("\n")}
-
-💡 Hypothesis:
-${researchState.step4.hypothesis}
-
-🎞 Slide Plan:
-${researchState.step5.slidePlan.join("\n")}
-  `;
-}
-
-// ===== Export Summary Text =====
-exportBtn.addEventListener("click", () => {
-  const blob = new Blob([summaryText.textContent], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Research_Plan_Summary.txt";
-  a.click();
-  URL.revokeObjectURL(url);
-});
