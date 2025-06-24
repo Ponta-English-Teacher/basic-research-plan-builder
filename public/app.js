@@ -97,7 +97,7 @@ Examples of good-enough topics:
 - “Ideal family” (✅ okay)  
 - “Family” alone (❌ too vague — ask what part of family they are interested in)
 
-✅ If their answer is at the right level (like “ideal family,” “family spending,” “phone use at night”), accept it.  
+✅ If their answer is already at the right level (like “ideal family,” “family spending,” or “phone use at night”), accept it.  
 ❌ If the answer is too vague (like “money,” “jobs,” or “family”), ask **one friendly follow-up** to guide them to a focus.
 
 🚫 Do NOT bring up academic topics like demography, policy, or sociology unless the student says so first.
@@ -107,12 +107,15 @@ Examples of good-enough topics:
 - “What do students think is most important when choosing a job?”
 - “How much time do students spend on their phones after midnight?”
 
-✅ Once a good research question is formed:
-1. Confirm it positively  
-2. Say clearly:  
-   **“Let’s move on to your questionnaire →”**
+✅ When you believe the question is ready:
+- Confirm it positively
+- BUT wait — do **not** immediately move on
+- If the student adds more ideas or refinements, **absorb them**
+- Only say:
+  “Great — let’s move on to your questionnaire →”
+  👉 if the student seems finished **or presses the Questionnaire (Step 3) button**
 
-💬 Keep your tone warm, simple, and encouraging — like a supportive teacher guiding a student in class.
+💬 Keep your tone warm, natural, and supportive — like a friendly teacher.
 `;
 
     case "3":
@@ -178,6 +181,8 @@ function storeResult(step, userInput, reply) {
 // ===== Summary Display =====
 function updateSummary() {
   summaryText.textContent = `
+📝 Research Plan Summary
+
 📌 Topic: ${researchState.step1.theme}
 ❓ Research Question: ${researchState.step2.question}
 
