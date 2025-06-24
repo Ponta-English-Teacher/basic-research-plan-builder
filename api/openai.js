@@ -21,8 +21,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Invalid response from OpenAI" });
     }
 
-    // ✅ Return the full OpenAI response format
-    return res.status(200).json(data);
+    // ✅ FIXED: return only the reply string
+    return res.status(200).json({
+      reply: data.choices[0].message.content
+    });
+
   } catch (error) {
     console.error("API error:", error);
     return res.status(500).json({ error: "Server error. Please try again." });
