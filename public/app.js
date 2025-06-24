@@ -21,10 +21,11 @@ const exportBtn = document.getElementById("export-btn");
 // ===== Step Button Switching =====
 stepButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    const step = btn.dataset.step;
-    researchState.currentStep = step;
+    const stepNumber = btn.dataset.step;
+    const stepKey = `step${stepNumber}`;
+    researchState.currentStep = stepKey;
     resetChat();
-    appendMessage("gpt", getUserFacingInstruction(step));
+    appendMessage("gpt", getUserFacingInstruction(stepKey));
   });
 });
 
@@ -148,6 +149,7 @@ exportBtn.addEventListener("click", () => {
     replaceLastGPTMessage("Sorry, something went wrong while exporting.");
   });
 });
+
 // ===== API Call to OpenAI (Backend Proxy or Local Server) =====
 async function sendToOpenAI(messages) {
   const response = await fetch("/api/openai", {
@@ -162,7 +164,8 @@ async function sendToOpenAI(messages) {
   });
 
   if (!response.ok) {
-    throw new Error("OpenAI API request failed");
+    const errorText = await response.text();
+    throw new Error(`OpenAI API request failed: ${errorText}`);
   }
 
   const data = await response.json();
