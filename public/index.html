@@ -21,10 +21,11 @@ const exportBtn = document.getElementById("export-btn");
 // ===== Step Button Switching =====
 stepButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    const step = btn.dataset.step;
-    researchState.currentStep = step;
+    const stepNumber = btn.dataset.step;
+    const stepKey = `step${stepNumber}`;
+    researchState.currentStep = stepKey;
     resetChat();
-    appendMessage("gpt", getUserFacingInstruction(step));
+    appendMessage("gpt", getUserFacingInstruction(stepKey));
   });
 });
 
