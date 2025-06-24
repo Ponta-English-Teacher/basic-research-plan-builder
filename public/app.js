@@ -98,7 +98,7 @@ function getUserFacingInstruction(step) {
 function getSystemPrompt(step) {
   switch (step) {
     case "step1":
-      return "You are helping a student choose a broad topic for a basic research project. Accept vague ideas like 'money' or 'family'. Just help them pick a general theme.";
+      return "You are helping a student choose a simple, broad theme for a research project. Accept vague answers like 'money' or 'family'. Do NOT break it into subtopics or give academic suggestions. Just encourage the student and confirm their chosen topic. Keep it short and simple, like a kind teacher.";
     case "step2":
       return "You are helping a student focus their theme into a specific, surveyable research question. Accept their vague topic and help them take one step deeper. Offer encouraging ideas and end with 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
     case "step3":
