@@ -83,9 +83,9 @@ function getUserFacingInstruction(step) {
     case "step2":
       return "Let’s narrow it down. What do you want to know about this topic?";
     case "step3":
-      return "Now let’s build your questionnaire. Would you like some examples?";
+      return "Let’s start by selecting some basic profile questions. Would you like to see some examples?";
     case "step4":
-      return "Let’s write a simple hypothesis. What do you expect based on your question?";
+      return "Let’s write a simple hypothesis. Think about what you expect based on your question.";
     case "step5":
       return "Let’s create a slide plan. How would you present your research in 5–6 slides?";
     case "step6":
@@ -102,11 +102,11 @@ function getSystemPrompt(step) {
     case "step2":
       return "You are helping a student focus their theme into a specific, surveyable research question. Accept their vague topic and help them take one step deeper. Offer encouraging ideas and end with 'Great — we can use that as your research question! Let’s move on to building your questionnaire.'";
     case "step3":
-      return "Now suggest 20 profile questions (age, grade, hobbies, etc.), 3–5 Likert scale questions based on their research question, and 2–3 yes/no multiple choice questions. Keep it beginner friendly.";
+      return "You are helping a student build a questionnaire. For now, give only general profile questions. List exactly 10 simple items such as age, year, part-time job, club activities, daily routine, etc. Do not explain anything. Do not include Likert or Yes/No questions. Just return the list clearly so the student can choose 5–7 of them.";
     case "step4":
-      return "Help the student write a simple hypothesis based on their survey question. Ask what they expect and suggest one simple sentence.";
+      return "Ask the student 2–3 simple questions to help them think about what they expect from the survey results. Do NOT write the hypothesis yourself. Just help them think. The student will write their own hypothesis.";
     case "step5":
-      return "Create a slide plan (5–6 slides) for a short student presentation. Each slide should have a short title and 2–3 bullet points. Keep it simple, suitable for use in Felo or Gamma.";
+      return "Create a 5–6 slide presentation plan based on the student's research project. For each slide, write a short title and 2–3 simple bullet points. Do NOT explain or describe the slides. Do NOT include narration or text for speaking. Just output the slide ideas clearly.";
     case "step6":
       return "Summarize the entire research plan clearly and concisely for the student to copy and submit.";
     default:
