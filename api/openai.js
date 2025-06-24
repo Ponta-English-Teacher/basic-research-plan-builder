@@ -17,14 +17,15 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (!data || !data.choices || !data.choices[0]) {
-      return res.status(500).json({ error: "Invalid response from OpenAI" });
+    // ✅ Extract just the assistant's reply
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      return res.status(500).json({ error: "No reply from OpenAI" });
     }
 
-    // ✅ FIXED: return only the reply string
-    return res.status(200).json({
-      reply: data.choices[0].message.content
-    });
+    // ✅ Send ONLY what your frontend expects
+    return res.status(200).json({ reply: content });
 
   } catch (error) {
     console.error("API error:", error);
