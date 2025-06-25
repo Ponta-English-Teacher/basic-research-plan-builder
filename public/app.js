@@ -181,7 +181,7 @@ async function sendToOpenAI(messages) {
   }
 
   const data = await response.json();
-  return { content: data.choices[0].message.content };
+  return { content: data.reply };
 }
 
 // ===== Initial GPT Message on Load =====
